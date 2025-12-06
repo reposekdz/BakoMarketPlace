@@ -6,13 +6,16 @@ interface CartDrawerProps {
   onClose: () => void;
   cart: Array<Product & { quantity: number }>;
   onUpdateQuantity: (productId: string, quantity: number) => void;
+  currency: string;
 }
 
-export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity }: CartDrawerProps) {
+export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity, currency }: CartDrawerProps) {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = subtotal > 100 ? 0 : 15;
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
+
+  const currencySymbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥';
 
   if (!isOpen) return null;
 
@@ -62,7 +65,7 @@ export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity }: CartDraw
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="mb-1 line-clamp-2">{item.name}</h4>
-                    <p className="text-gray-600 mb-2">${item.price}</p>
+                    <p className="text-gray-600 mb-2">{currencySymbol}{item.price}</p>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
@@ -118,19 +121,19 @@ export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity }: CartDraw
               <div className="space-y-2">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{currencySymbol}{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                  <span>{shipping === 0 ? 'Free' : `${currencySymbol}${shipping.toFixed(2)}`}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>{currencySymbol}{tax.toFixed(2)}</span>
                 </div>
                 <div className="border-t border-gray-200 pt-2 flex justify-between">
                   <span>Total</span>
-                  <span className="text-purple-600">${total.toFixed(2)}</span>
+                  <span className="text-purple-600">{currencySymbol}{total.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -138,7 +141,7 @@ export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity }: CartDraw
                 <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg text-sm">
                   <Gift className="w-4 h-4 text-green-600" />
                   <span className="text-green-800">
-                    Add ${(100 - subtotal).toFixed(2)} more for free shipping!
+                    Add {currencySymbol}{(100 - subtotal).toFixed(2)} more for free shipping!
                   </span>
                 </div>
               )}

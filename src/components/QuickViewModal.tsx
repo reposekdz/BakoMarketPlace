@@ -9,6 +9,7 @@ interface QuickViewModalProps {
   onAddToCart: (product: Product, quantity: number) => void;
   onToggleWishlist: (product: Product) => void;
   isInWishlist: boolean;
+  onViewFull: () => void;
 }
 
 export function QuickViewModal({ 
@@ -16,7 +17,8 @@ export function QuickViewModal({
   onClose, 
   onAddToCart, 
   onToggleWishlist,
-  isInWishlist 
+  isInWishlist,
+  onViewFull
 }: QuickViewModalProps) {
   const [quantity, setQuantity] = useState(1);
 
@@ -38,7 +40,15 @@ export function QuickViewModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between z-10">
-          <h3>Quick View</h3>
+          <div className="flex items-center gap-3">
+            <h3>Quick View</h3>
+            <button
+              onClick={onViewFull}
+              className="px-4 py-1 text-sm text-purple-600 hover:bg-purple-50 rounded transition-colors"
+            >
+              View Full Details
+            </button>
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"

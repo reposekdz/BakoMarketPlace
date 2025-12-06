@@ -9,9 +9,15 @@ interface ProductGridProps {
   sortBy: string;
   setSortBy: (sort: string) => void;
   priceRange: [number, number];
+  selectedBrands: string[];
+  selectedColors: string[];
+  selectedSizes: string[];
+  minRating: number;
+  freeShipping: boolean;
   viewMode: 'grid' | 'list';
   setViewMode: (mode: 'grid' | 'list') => void;
   onQuickView: (product: Product) => void;
+  onViewProduct: (product: Product) => void;
   onAddToComparison: (product: Product) => void;
   onToggleWishlist: (product: Product) => void;
   onAddToCart: (product: Product) => void;
@@ -143,9 +149,15 @@ export function ProductGrid({
   sortBy,
   setSortBy,
   priceRange,
+  selectedBrands,
+  selectedColors,
+  selectedSizes,
+  minRating,
+  freeShipping,
   viewMode,
   setViewMode,
   onQuickView,
+  onViewProduct,
   onAddToComparison,
   onToggleWishlist,
   onAddToCart,
@@ -155,7 +167,12 @@ export function ProductGrid({
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-    return matchesSearch && matchesCategory && matchesPrice;
+    const matchesBrands = selectedBrands.length === 0 || selectedBrands.includes(product.seller.name);
+    const matchesColors = selectedColors.length === 0 || selectedColors.some(color => product.features.includes(color));
+    const matchesSizes = selectedSizes.length === 0 || selectedSizes.some(size => product.features.includes(size));
+    const matchesRating = product.rating >= minRating;
+    const matchesFreeShipping = !freeShipping || product.badges?.includes('Free Shipping');
+    return matchesSearch && matchesCategory && matchesPrice && matchesBrands && matchesColors && matchesSizes && matchesRating && matchesFreeShipping;
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -225,6 +242,7 @@ export function ProductGrid({
             product={product}
             viewMode={viewMode}
             onQuickView={onQuickView}
+            onViewProduct={onViewProduct}
             onAddToComparison={onAddToComparison}
             onToggleWishlist={onToggleWishlist}
             onAddToCart={onAddToCart}
@@ -240,6 +258,7 @@ interface ProductCardProps {
   product: Product;
   viewMode: 'grid' | 'list';
   onQuickView: (product: Product) => void;
+  onViewProduct: (product: Product) => void;
   onAddToComparison: (product: Product) => void;
   onToggleWishlist: (product: Product) => void;
   onAddToCart: (product: Product) => void;
@@ -250,6 +269,7 @@ function ProductCard({
   product, 
   viewMode, 
   onQuickView, 
+  onViewProduct,
   onAddToComparison, 
   onToggleWishlist,
   onAddToCart,

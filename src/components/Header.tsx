@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, Heart, User, Bell, Globe, TrendingUp, Sparkles } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Bell, Globe, TrendingUp, Sparkles, DollarSign, Award } from 'lucide-react';
 
 interface HeaderProps {
   searchQuery: string;
@@ -7,6 +7,9 @@ interface HeaderProps {
   wishlistCount: number;
   onCartClick: () => void;
   onWishlistClick: () => void;
+  currency: string;
+  setCurrency: (currency: string) => void;
+  rewardPoints: number;
 }
 
 export function Header({ 
@@ -15,7 +18,10 @@ export function Header({
   cartCount, 
   wishlistCount,
   onCartClick,
-  onWishlistClick 
+  onWishlistClick,
+  currency,
+  setCurrency,
+  rewardPoints
 }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
@@ -28,6 +34,16 @@ export function Header({
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <select 
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="bg-white/20 px-3 py-1 rounded text-white border-none outline-none cursor-pointer"
+            >
+              <option value="USD">USD $</option>
+              <option value="EUR">EUR €</option>
+              <option value="GBP">GBP £</option>
+              <option value="JPY">JPY ¥</option>
+            </select>
             <button className="flex items-center gap-1 hover:opacity-80">
               <Globe className="w-4 h-4" />
               <span>EN</span>
@@ -36,6 +52,10 @@ export function Header({
               <TrendingUp className="w-4 h-4" />
               <span>Sell on Bako</span>
             </button>
+            <div className="flex items-center gap-1 px-3 py-1 bg-white/20 rounded">
+              <Award className="w-4 h-4" />
+              <span>{rewardPoints} pts</span>
+            </div>
           </div>
         </div>
       </div>
