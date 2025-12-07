@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AuthPages } from './components/AuthPages';
 import { Header } from './components/Header';
 import { AdvancedSidebar } from './components/AdvancedSidebar';
 import { ProductGrid } from './components/ProductGrid';
@@ -11,6 +12,9 @@ import { FullProductPage } from './components/FullProductPage';
 import { RecentlyViewed } from './components/RecentlyViewed';
 import { FlashDeals } from './components/FlashDeals';
 import { RewardsProgram } from './components/RewardsProgram';
+import { SellerDashboard } from './components/SellerDashboard';
+import { OnlineExpo } from './components/OnlineExpo';
+import { SponsorshipPage } from './components/SponsorshipPage';
 import { Toaster } from 'sonner@2.0.3';
 
 export interface Product {
@@ -30,6 +34,7 @@ export interface Product {
     rating: number;
     followers?: number;
     products?: number;
+    id?: string;
   };
   stock: number;
   features: string[];
@@ -50,6 +55,13 @@ export interface Product {
   returnPolicy?: string;
   bundleDeals?: Array<{ id: string; discount: number }>;
   frequentlyBought?: string[];
+  deliveryOptions?: {
+    delivery: boolean;
+    pickup: boolean;
+  };
+  biddingEnabled?: boolean;
+  currentBid?: number;
+  biddingEndTime?: string;
 }
 
 export interface Review {
@@ -75,7 +87,8 @@ export interface Question {
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'product'>('home');
+  const [user, setUser] = useState<any>(null);
+  const [currentView, setCurrentView] = useState<'home' | 'product' | 'seller-dashboard' | 'expo' | 'sponsorship'>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,7 +113,6 @@ export default function App() {
   const viewProduct = (product: Product) => {
     setSelectedProductId(product.id);
     setCurrentView('product');
-    // Add to recently viewed
     if (!recentlyViewed.find(p => p.id === product.id)) {
       setRecentlyViewed([product, ...recentlyViewed.slice(0, 9)]);
     }
@@ -140,7 +152,6 @@ export default function App() {
     } else {
       setCart([...cart, { ...product, quantity }]);
     }
-    // Award points
     setRewardPoints(prev => prev + Math.floor(product.price * 0.1));
   };
 
@@ -154,6 +165,17 @@ export default function App() {
     }
   };
 
+  const handleLogin = (userData: any) => {
+    setUser(userData);
+    if (userData.isSeller) {
+      setCurrentView('seller-dashboard');
+    }
+  };
+
+  if (!user) {
+    return <AuthPages onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
@@ -166,9 +188,12 @@ export default function App() {
         currency={currency}
         setCurrency={setCurrency}
         rewardPoints={rewardPoints}
+        user={user}
+        onNavigate={setCurrentView}
+        currentView={currentView}
       />
       
-      {currentView === 'home' ? (
+      {currentView === 'home' && (
         <>
           <FlashDeals onViewProduct={viewProduct} />
           
@@ -221,7 +246,9 @@ export default function App() {
             </main>
           </div>
         </>
-      ) : (
+      )}
+
+      {currentView === 'product' && (
         <FullProductPage 
           productId={selectedProductId!}
           onBack={backToHome}
@@ -230,6 +257,28 @@ export default function App() {
           onAddToComparison={addToComparison}
           isInWishlist={wishlist.some(p => p.id === selectedProductId)}
           onViewProduct={viewProduct}
+          user={user}
+        />
+      )}
+
+      {currentView === 'seller-dashboard' && (
+        <SellerDashboard 
+          user={user}
+          onNavigate={setCurrentView}
+        />
+      )}
+
+      {currentView === 'expo' && (
+        <OnlineExpo 
+          onViewProduct={viewProduct}
+          user={user}
+        />
+      )}
+
+      {currentView === 'sponsorship' && (
+        <SponsorshipPage 
+          user={user}
+          onBack={() => setCurrentView('home')}
         />
       )}
 

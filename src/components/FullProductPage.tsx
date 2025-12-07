@@ -7,6 +7,7 @@ import { ProductQA } from './ProductQA';
 import { ProductSpecifications } from './ProductSpecifications';
 import { FrequentlyBought } from './FrequentlyBought';
 import { PriceHistory } from './PriceHistory';
+import { SellerCommunication } from './SellerCommunication';
 
 interface FullProductPageProps {
   productId: string;
@@ -16,6 +17,7 @@ interface FullProductPageProps {
   onAddToComparison: (product: Product) => void;
   isInWishlist: boolean;
   onViewProduct: (product: Product) => void;
+  user?: any;
 }
 
 const mockProduct: Product = {
@@ -87,7 +89,8 @@ export function FullProductPage({
   onToggleWishlist,
   onAddToComparison,
   isInWishlist,
-  onViewProduct
+  onViewProduct,
+  user
 }: FullProductPageProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'qa' | 'specs'>('overview');
   const [selectedImage, setSelectedImage] = useState(0);
@@ -536,6 +539,14 @@ export function FullProductPage({
           {activeTab === 'specs' && <ProductSpecifications specs={mockProduct.specifications!} />}
         </div>
       </div>
+
+      {/* Seller Communication */}
+      {user && (
+        <SellerCommunication 
+          seller={mockProduct.seller}
+          productName={mockProduct.name}
+        />
+      )}
     </div>
   );
 }

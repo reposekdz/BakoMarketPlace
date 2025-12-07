@@ -1,4 +1,5 @@
-import { Search, ShoppingCart, Heart, User, Bell, Globe, TrendingUp, Sparkles, DollarSign, Award } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Bell, Globe, TrendingUp, Sparkles, DollarSign, Award, Store, TrendingDown, Calendar, LogOut, Settings, Package } from 'lucide-react';
+import { useState } from 'react';
 
 interface HeaderProps {
   searchQuery: string;
@@ -10,6 +11,9 @@ interface HeaderProps {
   currency: string;
   setCurrency: (currency: string) => void;
   rewardPoints: number;
+  user?: any;
+  onNavigate?: (view: string) => void;
+  currentView?: string;
 }
 
 export function Header({ 
@@ -21,8 +25,13 @@ export function Header({
   onWishlistClick,
   currency,
   setCurrency,
-  rewardPoints
+  rewardPoints,
+  user,
+  onNavigate,
+  currentView
 }: HeaderProps) {
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
       <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 px-6 py-2 text-white">
@@ -48,9 +57,28 @@ export function Header({
               <Globe className="w-4 h-4" />
               <span>EN</span>
             </button>
-            <button className="flex items-center gap-1 hover:opacity-80">
+            <button 
+              onClick={() => onNavigate?.('expo')}
+              className="flex items-center gap-1 hover:opacity-80"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Online Expo</span>
+            </button>
+            {user?.isSeller && (
+              <button 
+                onClick={() => onNavigate?.('seller-dashboard')}
+                className="flex items-center gap-1 hover:opacity-80"
+              >
+                <Store className="w-4 h-4" />
+                <span>My Shop</span>
+              </button>
+            )}
+            <button 
+              onClick={() => onNavigate?.('sponsorship')}
+              className="flex items-center gap-1 hover:opacity-80"
+            >
               <TrendingUp className="w-4 h-4" />
-              <span>Sell on Bako</span>
+              <span>Become Sponsor</span>
             </button>
             <div className="flex items-center gap-1 px-3 py-1 bg-white/20 rounded">
               <Award className="w-4 h-4" />
@@ -128,10 +156,36 @@ export function Header({
               )}
             </button>
 
-            <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg hover:shadow-lg transition-shadow">
+            <button 
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg hover:shadow-lg transition-shadow"
+            >
               <User className="w-5 h-5" />
               <span>Sign In</span>
             </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 p-4">
+                <div className="flex items-center gap-2 text-gray-500 mb-2">
+                  <Settings className="w-4 h-4" />
+                  <span>Account Settings</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {['Profile', 'Orders', 'Wishlist', 'Addresses'].map((term) => (
+                    <button 
+                      key={term}
+                      className="px-3 py-1 bg-gray-100 rounded-full hover:bg-purple-100 hover:text-purple-600 transition-colors"
+                    >
+                      {term}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 text-gray-500 mt-2">
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
