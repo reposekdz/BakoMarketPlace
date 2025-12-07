@@ -525,6 +525,345 @@ export const initDatabase = async () => {
     `);
 
     await connection.query(`
+      CREATE TABLE IF NOT EXISTS advertisements (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        image_url VARCHAR(255) NOT NULL,
+        video_url VARCHAR(255),
+        link_url VARCHAR(255),
+        ad_type ENUM('banner', 'popup', 'video', 'carousel', 'native', 'interstitial') NOT NULL,
+        placement ENUM('home_top', 'home_sidebar', 'product_page', 'checkout', 'category', 'search_results') NOT NULL,
+        sponsor_id INT,
+        sponsor_name VARCHAR(255),
+        sponsor_logo VARCHAR(255),
+        start_date DATETIME NOT NULL,
+        end_date DATETIME NOT NULL,
+        budget DECIMAL(10,2) DEFAULT 0,
+        spent DECIMAL(10,2) DEFAULT 0,
+        impressions INT DEFAULT 0,
+        clicks INT DEFAULT 0,
+        conversions INT DEFAULT 0,
+        ctr DECIMAL(5,2) DEFAULT 0,
+        status ENUM('active', 'paused', 'completed', 'pending') DEFAULT 'pending',
+        priority INT DEFAULT 0,
+        target_audience JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (sponsor_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_status (status),
+        INDEX idx_placement (placement),
+        INDEX idx_dates (start_date, end_date),
+        INDEX idx_priority (priority)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ad_interactions (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        ad_id INT NOT NULL,
+        user_id INT,
+        interaction_type ENUM('impression', 'click', 'conversion', 'close') NOT NULL,
+        device_type VARCHAR(50),
+        browser VARCHAR(50),
+        ip_address VARCHAR(45),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ad_id) REFERENCES advertisements(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_ad (ad_id),
+        INDEX idx_type (interaction_type),
+        INDEX idx_created (created_at)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS expo_events (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        category VARCHAR(100),
+        start_date DATETIME NOT NULL,
+        end_date DATETIME NOT NULL,
+        status ENUM('upcoming', 'live', 'ended') DEFAULT 'upcoming',
+        banner_image VARCHAR(255),
+        video_url VARCHAR(255),
+        location VARCHAR(255),
+        is_virtual BOOLEAN DEFAULT TRUE,
+        max_booths INT DEFAULT 100,
+        booth_price DECIMAL(10,2) DEFAULT 0,
+        attendees_count INT DEFAULT 0,
+        total_revenue DECIMAL(10,2) DEFAULT 0,
+        featured BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_status (status),
+        INDEX idx_dates (start_date, end_date),
+        INDEX idx_featured (featured)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS expo_booths (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        expo_id INT NOT NULL,
+        shop_id INT NOT NULL,
+        booth_number VARCHAR(50),
+        booth_type ENUM('standard', 'premium', 'vip') DEFAULT 'standard',
+        position_x INT DEFAULT 0,
+        position_y INT DEFAULT 0,
+        is_live BOOLEAN DEFAULT FALSE,
+        viewers_count INT DEFAULT 0,
+        total_views INT DEFAULT 0,
+        products_displayed INT DEFAULT 0,
+        sales_made INT DEFAULT 0,
+        revenue DECIMAL(10,2) DEFAULT 0,
+        booth_design JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (expo_id) REFERENCES expo_events(id) ON DELETE CASCADE,
+        FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+        INDEX idx_expo (expo_id),
+        INDEX idx_shop (shop_id),
+        INDEX idx_live (is_live)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS expo_attendees (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        expo_id INT NOT NULL,
+        user_id INT NOT NULL,
+        registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        check_in_time TIMESTAMP NULL,
+        booths_visited JSON,
+        products_viewed JSON,
+        time_spent INT DEFAULT 0,
+        FOREIGN KEY (expo_id) REFERENCES expo_events(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_attendee (expo_id, user_id),
+        INDEX idx_expo_att (expo_id),
+        INDEX idx_user_att (user_id)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS stream_participants (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        stream_id INT NOT NULL,
+        user_id INT NOT NULL,
+        role ENUM('host', 'co-host', 'guest', 'viewer') DEFAULT 'viewer',
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        left_at TIMESTAMP NULL,
+        is_camera_on BOOLEAN DEFAULT FALSE,
+        is_mic_on BOOLEAN DEFAULT FALSE,
+        screen_sharing BOOLEAN DEFAULT FALSE,
+        FOREIGN KEY (stream_id) REFERENCES live_streams(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        INDEX idx_stream_part (stream_id),
+        INDEX idx_user_part (user_id)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS stream_chat (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        stream_id INT NOT NULL,
+        user_id INT NOT NULL,
+        message TEXT NOT NULL,
+        message_type ENUM('text', 'emoji', 'gift', 'product', 'poll') DEFAULT 'text',
+        metadata JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (stream_id) REFERENCES live_streams(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        INDEX idx_stream_chat (stream_id),
+        INDEX idx_created_chat (created_at)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS stream_reactions (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        stream_id INT NOT NULL,
+        user_id INT NOT NULL,
+        reaction_type VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (stream_id) REFERENCES live_streams(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        INDEX idx_stream_react (stream_id)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS stream_products (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        stream_id INT NOT NULL,
+        product_id INT NOT NULL,
+        display_order INT DEFAULT 0,
+        is_featured BOOLEAN DEFAULT FALSE,
+        special_price DECIMAL(10,2),
+        quantity_available INT,
+        quantity_sold INT DEFAULT 0,
+        clicks INT DEFAULT 0,
+        FOREIGN KEY (stream_id) REFERENCES live_streams(id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products(id),
+        INDEX idx_stream_prod (stream_id)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ai_recommendations (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        product_id INT NOT NULL,
+        score DECIMAL(5,2) NOT NULL,
+        reason TEXT,
+        algorithm VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+        INDEX idx_user_ai (user_id),
+        INDEX idx_score_ai (score)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS social_shopping (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        friend_id INT NOT NULL,
+        activity_type ENUM('shared_cart', 'group_buy', 'wish_together', 'compare') NOT NULL,
+        product_ids JSON,
+        status ENUM('active', 'completed', 'cancelled') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_user_social (user_id)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS voice_search (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT,
+        query_text TEXT NOT NULL,
+        audio_url VARCHAR(255),
+        results_count INT DEFAULT 0,
+        selected_product_id INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (selected_product_id) REFERENCES products(id) ON DELETE SET NULL,
+        INDEX idx_user_voice (user_id)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS virtual_try_room (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        session_id VARCHAR(255) NOT NULL,
+        products_tried JSON,
+        body_measurements JSON,
+        preferences JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_user_vtr (user_id)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS smart_contracts (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        order_id INT NOT NULL,
+        contract_address VARCHAR(255),
+        blockchain VARCHAR(50),
+        status ENUM('pending', 'executed', 'failed') DEFAULT 'pending',
+        transaction_hash VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (order_id) REFERENCES orders(id),
+        INDEX idx_order_contract (order_id)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS live_streams (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        shop_id INT NOT NULL,
+        expo_booth_id INT,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        stream_url VARCHAR(255),
+        thumbnail VARCHAR(255),
+        status ENUM('scheduled', 'live', 'ended') DEFAULT 'scheduled',
+        scheduled_at DATETIME,
+        started_at TIMESTAMP NULL,
+        ended_at TIMESTAMP NULL,
+        viewers_count INT DEFAULT 0,
+        peak_viewers INT DEFAULT 0,
+        total_views INT DEFAULT 0,
+        likes INT DEFAULT 0,
+        products_featured JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+        FOREIGN KEY (expo_booth_id) REFERENCES expo_booths(id) ON DELETE SET NULL,
+        INDEX idx_shop_stream (shop_id),
+        INDEX idx_status_stream (status)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS gamification (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        points INT DEFAULT 0,
+        level INT DEFAULT 1,
+        badges JSON,
+        achievements JSON,
+        streak_days INT DEFAULT 0,
+        last_activity DATE,
+        total_purchases INT DEFAULT 0,
+        total_reviews INT DEFAULT 0,
+        referrals INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_user_game (user_id),
+        INDEX idx_points (points),
+        INDEX idx_level (level)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS flash_sales (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        product_id INT NOT NULL,
+        original_price DECIMAL(10,2) NOT NULL,
+        sale_price DECIMAL(10,2) NOT NULL,
+        discount_percentage DECIMAL(5,2),
+        quantity_available INT NOT NULL,
+        quantity_sold INT DEFAULT 0,
+        start_time DATETIME NOT NULL,
+        end_time DATETIME NOT NULL,
+        status ENUM('upcoming', 'active', 'ended', 'sold_out') DEFAULT 'upcoming',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+        INDEX idx_product_flash (product_id),
+        INDEX idx_status_flash (status),
+        INDEX idx_times (start_time, end_time)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ar_try_on (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        product_id INT NOT NULL,
+        ar_model_url VARCHAR(255) NOT NULL,
+        ar_type ENUM('face', 'body', 'room', 'hand') NOT NULL,
+        model_size INT,
+        usage_count INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+        INDEX idx_product_ar (product_id)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS shipping_rates (
         id INT PRIMARY KEY AUTO_INCREMENT,
         shop_id INT NOT NULL,

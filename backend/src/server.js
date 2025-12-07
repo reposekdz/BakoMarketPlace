@@ -24,6 +24,11 @@ import locationRoutes from './routes/locations.js';
 import callRoutes from './routes/calls.js';
 import analyticsRoutes2 from './routes/analytics.js';
 import seedRoutes from './routes/seed.js';
+import advertisementRoutes from './routes/advertisements.js';
+import expoRoutes2 from './routes/expos.js';
+import innovationRoutes from './routes/innovations.js';
+import streamingRoutes from './routes/streaming.js';
+import revolutionaryRoutes from './routes/revolutionary.js';
 
 dotenv.config();
 
@@ -58,6 +63,11 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/calls', callRoutes);
 app.use('/api/track', analyticsRoutes2);
 app.use('/api/seed', seedRoutes);
+app.use('/api/ads', advertisementRoutes);
+app.use('/api/expo', expoRoutes2);
+app.use('/api/innovations', innovationRoutes);
+app.use('/api/streaming', streamingRoutes);
+app.use('/api/revolutionary', revolutionaryRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
