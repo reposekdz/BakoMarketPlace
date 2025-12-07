@@ -61,20 +61,32 @@ router.post('/login', async (req, res) => {
 router.get('/products', adminAuthMiddleware, async (req, res) => {
   try {
     const { search, category, status, page = 1, limit = 20 } = req.query;
-    let query = 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1';
+    let query = `
+      SELECT p.*, c.name as category_name, s.shop_name,
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = TRUE LIMIT 1) as image,
+        (SELECT COUNT(*) FROM product_images WHERE product_id = p.id) as image_count,
+        (SELECT COUNT(*) FROM product_variations WHERE product_id = p.id) as variation_count
+      FROM products p 
+      LEFT JOIN categories c ON p.category = c.slug
+      LEFT JOIN shops s ON p.shop_id = s.id
+      WHERE 1=1
+    `;
     const params = [];
     
     if (search) {
-      query += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
+      query += ' AND (p.name LIKE ? OR p.sku LIKE ? OR p.brand LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
     if (category) {
-      query += ' AND p.category_id = ?';
+      query += ' AND p.category = ?';
       params.push(category);
     }
-    if (status) {
-      query += ' AND p.is_published = ?';
-      params.push(status === 'published' ? 1 : 0);
+    if (status === 'active') {
+      query += ' AND p.status = "active"';
+    } else if (status === 'draft') {
+      query += ' AND p.status = "draft"';
+    } else if (status === 'out_of_stock') {
+      query += ' AND p.stock <= 0';
     }
     
     const offset = (page - 1) * limit;
@@ -83,8 +95,18 @@ router.get('/products', adminAuthMiddleware, async (req, res) => {
     
     const [products] = await pool.query(query, params);
     const [total] = await pool.query('SELECT COUNT(*) as count FROM products');
+    const [stats] = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
+        SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft,
+        SUM(CASE WHEN stock <= 0 THEN 1 ELSE 0 END) as out_of_stock,
+        SUM(views) as total_views,
+        SUM(sales) as total_sales
+      FROM products
+    `);
     
-    res.json({ products, total: total[0].count });
+    res.json({ products, total: total[0].count, stats: stats[0] });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -93,24 +115,40 @@ router.get('/products', adminAuthMiddleware, async (req, res) => {
 // Create product
 router.post('/products', adminAuthMiddleware, async (req, res) => {
   try {
-    const { name, description, price, compare_at_price, sku, quantity, category_id, images, is_published } = req.body;
+    const { name, description, price, original_price, category, brand, sku, stock, images, variations, featured, status } = req.body;
+    
+    const [shops] = await pool.query('SELECT id FROM shops WHERE user_id = ? LIMIT 1', [req.userId]);
+    const shopId = shops.length > 0 ? shops[0].id : null;
+    
+    if (!shopId) {
+      return res.status(400).json({ error: 'No shop found for admin user' });
+    }
     
     const [result] = await pool.query(
-      'INSERT INTO products (name, slug, description, price, compare_at_price, sku, quantity, category_id, vendor_id, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, name.toLowerCase().replace(/\s+/g, '-'), description, price, compare_at_price, sku, quantity, category_id, req.userId, is_published || false]
+      'INSERT INTO products (shop_id, name, description, price, original_price, category, brand, sku, stock, featured, status, rating) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [shopId, name, description, price, original_price || price, category, brand, sku, stock, featured || false, status || 'active', 0]
     );
     
     if (images && images.length > 0) {
       for (let i = 0; i < images.length; i++) {
         await pool.query(
-          'INSERT INTO product_images (product_id, image_url, is_primary, sort_order) VALUES (?, ?, ?, ?)',
+          'INSERT INTO product_images (product_id, image_url, is_primary, display_order) VALUES (?, ?, ?, ?)',
           [result.insertId, images[i], i === 0, i]
         );
       }
     }
     
-    await pool.query('INSERT INTO activity_logs (user_id, action, entity_type, entity_id) VALUES (?, ?, ?, ?)',
-      [req.userId, 'create', 'product', result.insertId]);
+    if (variations && variations.length > 0) {
+      for (const variation of variations) {
+        await pool.query(
+          'INSERT INTO product_variations (product_id, type, value, price_modifier, stock) VALUES (?, ?, ?, ?, ?)',
+          [result.insertId, variation.type, variation.value, variation.price_modifier || 0, variation.stock || 0]
+        );
+      }
+    }
+    
+    await pool.query('INSERT INTO activity_logs (user_id, action, entity_type, entity_id, details) VALUES (?, ?, ?, ?, ?)',
+      [req.userId, 'create', 'product', result.insertId, JSON.stringify({ name, price, category })]);
     
     res.status(201).json({ id: result.insertId, message: 'Product created successfully' });
   } catch (error) {
@@ -119,17 +157,58 @@ router.post('/products', adminAuthMiddleware, async (req, res) => {
 });
 
 // Update product
+router.get('/products/:id', adminAuthMiddleware, async (req, res) => {
+  try {
+    const [products] = await pool.query(`
+      SELECT p.*, s.shop_name,
+        (SELECT JSON_ARRAYAGG(image_url) FROM product_images WHERE product_id = p.id) as images,
+        (SELECT JSON_ARRAYAGG(JSON_OBJECT('type', type, 'value', value, 'price_modifier', price_modifier, 'stock', stock)) FROM product_variations WHERE product_id = p.id) as variations
+      FROM products p
+      LEFT JOIN shops s ON p.shop_id = s.id
+      WHERE p.id = ?
+    `, [req.params.id]);
+    
+    if (products.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    res.json(products[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.put('/products/:id', adminAuthMiddleware, async (req, res) => {
   try {
-    const { name, description, price, compare_at_price, sku, quantity, category_id, is_published } = req.body;
+    const { name, description, price, original_price, category, brand, sku, stock, featured, status, images, variations } = req.body;
     
     await pool.query(
-      'UPDATE products SET name = ?, description = ?, price = ?, compare_at_price = ?, sku = ?, quantity = ?, category_id = ?, is_published = ? WHERE id = ?',
-      [name, description, price, compare_at_price, sku, quantity, category_id, is_published, req.params.id]
+      'UPDATE products SET name = ?, description = ?, price = ?, original_price = ?, category = ?, brand = ?, sku = ?, stock = ?, featured = ?, status = ? WHERE id = ?',
+      [name, description, price, original_price, category, brand, sku, stock, featured, status, req.params.id]
     );
     
-    await pool.query('INSERT INTO activity_logs (user_id, action, entity_type, entity_id) VALUES (?, ?, ?, ?)',
-      [req.userId, 'update', 'product', req.params.id]);
+    if (images) {
+      await pool.query('DELETE FROM product_images WHERE product_id = ?', [req.params.id]);
+      for (let i = 0; i < images.length; i++) {
+        await pool.query(
+          'INSERT INTO product_images (product_id, image_url, is_primary, display_order) VALUES (?, ?, ?, ?)',
+          [req.params.id, images[i], i === 0, i]
+        );
+      }
+    }
+    
+    if (variations) {
+      await pool.query('DELETE FROM product_variations WHERE product_id = ?', [req.params.id]);
+      for (const variation of variations) {
+        await pool.query(
+          'INSERT INTO product_variations (product_id, type, value, price_modifier, stock) VALUES (?, ?, ?, ?, ?)',
+          [req.params.id, variation.type, variation.value, variation.price_modifier || 0, variation.stock || 0]
+        );
+      }
+    }
+    
+    await pool.query('INSERT INTO activity_logs (user_id, action, entity_type, entity_id, details) VALUES (?, ?, ?, ?, ?)',
+      [req.userId, 'update', 'product', req.params.id, JSON.stringify({ name, price, status })]);
     
     res.json({ message: 'Product updated successfully' });
   } catch (error) {
@@ -140,12 +219,136 @@ router.put('/products/:id', adminAuthMiddleware, async (req, res) => {
 // Delete product
 router.delete('/products/:id', adminAuthMiddleware, async (req, res) => {
   try {
+    const [product] = await pool.query('SELECT name FROM products WHERE id = ?', [req.params.id]);
+    
+    await pool.query('DELETE FROM product_images WHERE product_id = ?', [req.params.id]);
+    await pool.query('DELETE FROM product_variations WHERE product_id = ?', [req.params.id]);
     await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
     
-    await pool.query('INSERT INTO activity_logs (user_id, action, entity_type, entity_id) VALUES (?, ?, ?, ?)',
-      [req.userId, 'delete', 'product', req.params.id]);
+    await pool.query('INSERT INTO activity_logs (user_id, action, entity_type, entity_id, details) VALUES (?, ?, ?, ?, ?)',
+      [req.userId, 'delete', 'product', req.params.id, JSON.stringify({ name: product[0]?.name })]);
     
     res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/products/bulk-update', adminAuthMiddleware, async (req, res) => {
+  try {
+    const { productIds, updates } = req.body;
+    
+    for (const id of productIds) {
+      const updateFields = [];
+      const updateValues = [];
+      
+      if (updates.status) {
+        updateFields.push('status = ?');
+        updateValues.push(updates.status);
+      }
+      if (updates.featured !== undefined) {
+        updateFields.push('featured = ?');
+        updateValues.push(updates.featured);
+      }
+      if (updates.price) {
+        updateFields.push('price = ?');
+        updateValues.push(updates.price);
+      }
+      
+      if (updateFields.length > 0) {
+        updateValues.push(id);
+        await pool.query(
+          `UPDATE products SET ${updateFields.join(', ')} WHERE id = ?`,
+          updateValues
+        );
+      }
+    }
+    
+    await pool.query('INSERT INTO activity_logs (user_id, action, entity_type, details) VALUES (?, ?, ?, ?)',
+      [req.userId, 'bulk_update', 'product', JSON.stringify({ count: productIds.length, updates })]);
+    
+    res.json({ message: `${productIds.length} products updated successfully` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/products/bulk-delete', adminAuthMiddleware, async (req, res) => {
+  try {
+    const { productIds } = req.body;
+    
+    await pool.query('DELETE FROM product_images WHERE product_id IN (?)', [productIds]);
+    await pool.query('DELETE FROM product_variations WHERE product_id IN (?)', [productIds]);
+    await pool.query('DELETE FROM products WHERE id IN (?)', [productIds]);
+    
+    await pool.query('INSERT INTO activity_logs (user_id, action, entity_type, details) VALUES (?, ?, ?, ?)',
+      [req.userId, 'bulk_delete', 'product', JSON.stringify({ count: productIds.length })]);
+    
+    res.json({ message: `${productIds.length} products deleted successfully` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/products/:id/duplicate', adminAuthMiddleware, async (req, res) => {
+  try {
+    const [products] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
+    if (products.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    const product = products[0];
+    const [result] = await pool.query(
+      'INSERT INTO products (shop_id, name, description, price, original_price, category, brand, sku, stock, featured, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [product.shop_id, `${product.name} (Copy)`, product.description, product.price, product.original_price, product.category, product.brand, `${product.sku}-COPY`, product.stock, false, 'draft']
+    );
+    
+    const [images] = await pool.query('SELECT * FROM product_images WHERE product_id = ?', [req.params.id]);
+    for (const img of images) {
+      await pool.query(
+        'INSERT INTO product_images (product_id, image_url, is_primary, display_order) VALUES (?, ?, ?, ?)',
+        [result.insertId, img.image_url, img.is_primary, img.display_order]
+      );
+    }
+    
+    res.json({ id: result.insertId, message: 'Product duplicated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/products/import', adminAuthMiddleware, async (req, res) => {
+  try {
+    const { products } = req.body;
+    const imported = [];
+    
+    const [shops] = await pool.query('SELECT id FROM shops WHERE user_id = ? LIMIT 1', [req.userId]);
+    const shopId = shops[0]?.id;
+    
+    for (const product of products) {
+      const [result] = await pool.query(
+        'INSERT INTO products (shop_id, name, description, price, original_price, category, brand, sku, stock, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [shopId, product.name, product.description, product.price, product.original_price, product.category, product.brand, product.sku, product.stock, 'draft']
+      );
+      imported.push(result.insertId);
+    }
+    
+    res.json({ message: `${imported.length} products imported successfully`, imported });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/products/export', adminAuthMiddleware, async (req, res) => {
+  try {
+    const [products] = await pool.query(`
+      SELECT p.*, s.shop_name,
+        (SELECT GROUP_CONCAT(image_url) FROM product_images WHERE product_id = p.id) as images
+      FROM products p
+      LEFT JOIN shops s ON p.shop_id = s.id
+    `);
+    
+    res.json(products);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

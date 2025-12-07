@@ -403,6 +403,128 @@ export const initDatabase = async () => {
     `);
 
     await connection.query(`
+      CREATE TABLE IF NOT EXISTS shop_followers (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        shop_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_follow (user_id, shop_id),
+        INDEX idx_user_follow (user_id),
+        INDEX idx_shop_follow (shop_id)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS video_calls (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        caller_id INT NOT NULL,
+        receiver_id INT NOT NULL,
+        conversation_id INT,
+        call_type ENUM('audio', 'video') NOT NULL,
+        status ENUM('initiated', 'ringing', 'active', 'ended', 'missed', 'rejected') DEFAULT 'initiated',
+        duration INT DEFAULT 0,
+        started_at TIMESTAMP NULL,
+        ended_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (caller_id) REFERENCES users(id),
+        FOREIGN KEY (receiver_id) REFERENCES users(id),
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE SET NULL,
+        INDEX idx_caller (caller_id),
+        INDEX idx_receiver (receiver_id),
+        INDEX idx_status (status)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        session_token VARCHAR(255) NOT NULL,
+        device_info JSON,
+        ip_address VARCHAR(45),
+        is_online BOOLEAN DEFAULT TRUE,
+        last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_user_session (user_id),
+        INDEX idx_token (session_token),
+        INDEX idx_online (is_online)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS product_views (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        product_id INT NOT NULL,
+        user_id INT,
+        session_id VARCHAR(255),
+        ip_address VARCHAR(45),
+        user_agent TEXT,
+        referrer VARCHAR(255),
+        duration INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_product_view (product_id),
+        INDEX idx_user_view (user_id),
+        INDEX idx_created (created_at)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS shop_analytics (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        shop_id INT NOT NULL,
+        date DATE NOT NULL,
+        views INT DEFAULT 0,
+        unique_visitors INT DEFAULT 0,
+        product_views INT DEFAULT 0,
+        messages_received INT DEFAULT 0,
+        orders INT DEFAULT 0,
+        revenue DECIMAL(10,2) DEFAULT 0,
+        new_followers INT DEFAULT 0,
+        conversion_rate DECIMAL(5,2) DEFAULT 0,
+        avg_order_value DECIMAL(10,2) DEFAULT 0,
+        FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_shop_date (shop_id, date),
+        INDEX idx_date (date)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS product_recommendations (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        product_id INT NOT NULL,
+        score DECIMAL(5,2) NOT NULL,
+        reason VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+        INDEX idx_user_rec (user_id),
+        INDEX idx_score (score)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS price_alerts (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        product_id INT NOT NULL,
+        target_price DECIMAL(10,2) NOT NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        notified BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+        INDEX idx_user_alert (user_id),
+        INDEX idx_active (is_active)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS shipping_rates (
         id INT PRIMARY KEY AUTO_INCREMENT,
         shop_id INT NOT NULL,

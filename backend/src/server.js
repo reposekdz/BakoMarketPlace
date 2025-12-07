@@ -21,6 +21,9 @@ import notificationRoutes from './routes/notifications.js';
 import couponRoutes from './routes/coupons.js';
 import conversationRoutes from './routes/conversations.js';
 import locationRoutes from './routes/locations.js';
+import callRoutes from './routes/calls.js';
+import analyticsRoutes2 from './routes/analytics.js';
+import seedRoutes from './routes/seed.js';
 
 dotenv.config();
 
@@ -52,6 +55,9 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/calls', callRoutes);
+app.use('/api/track', analyticsRoutes2);
+app.use('/api/seed', seedRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);

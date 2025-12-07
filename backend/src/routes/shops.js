@@ -105,8 +105,90 @@ router.get('/:id/products', async (req, res) => {
 router.post('/:id/follow', async (req, res) => {
   try {
     const { userId } = req.body;
+    
+    const [existing] = await pool.query(
+      'SELECT id FROM shop_followers WHERE user_id = ? AND shop_id = ?',
+      [userId, req.params.id]
+    );
+    
+    if (existing.length > 0) {
+      await pool.query('DELETE FROM shop_followers WHERE user_id = ? AND shop_id = ?', [userId, req.params.id]);
+      await pool.query('UPDATE shops SET followers = GREATEST(followers - 1, 0) WHERE id = ?', [req.params.id]);
+      return res.json({ message: 'Shop unfollowed', following: false });
+    }
+    
+    await pool.query('INSERT INTO shop_followers (user_id, shop_id) VALUES (?, ?)', [userId, req.params.id]);
     await pool.query('UPDATE shops SET followers = followers + 1 WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Shop followed' });
+    
+    const [shop] = await pool.query('SELECT user_id, shop_name FROM shops WHERE id = ?', [req.params.id]);
+    if (shop.length > 0) {
+      await pool.query(
+        'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)',
+        [shop[0].user_id, 'New Follower', `Someone started following ${shop[0].shop_name}`, 'system']
+      );
+    }
+    
+    res.json({ message: 'Shop followed', following: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/:id/followers', async (req, res) => {
+  try {
+    const [followers] = await pool.query(`
+      SELECT u.id, u.first_name, u.last_name, u.avatar, sf.created_at
+      FROM shop_followers sf
+      JOIN users u ON sf.user_id = u.id
+      WHERE sf.shop_id = ?
+      ORDER BY sf.created_at DESC
+    `, [req.params.id]);
+    res.json(followers);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/:id/analytics', async (req, res) => {
+  try {
+    const [analytics] = await pool.query(`
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as views
+      FROM product_views pv
+      JOIN products p ON pv.product_id = p.id
+      WHERE p.shop_id = ?
+      GROUP BY DATE(created_at)
+      ORDER BY date DESC
+      LIMIT 30
+    `, [req.params.id]);
+    
+    const [stats] = await pool.query(`
+      SELECT 
+        COUNT(DISTINCT pv.user_id) as unique_visitors,
+        COUNT(*) as total_views,
+        AVG(pv.duration) as avg_duration
+      FROM product_views pv
+      JOIN products p ON pv.product_id = p.id
+      WHERE p.shop_id = ? AND pv.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    `, [req.params.id]);
+    
+    res.json({ analytics, stats: stats[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/:id/update', async (req, res) => {
+  try {
+    const { shop_name, description, shop_category, province, district, sector, cell, latitude, longitude, offers_delivery, delivery_radius } = req.body;
+    
+    await pool.query(
+      'UPDATE shops SET shop_name = ?, description = ?, shop_category = ?, province = ?, district = ?, sector = ?, cell = ?, latitude = ?, longitude = ?, offers_delivery = ?, delivery_radius = ? WHERE id = ?',
+      [shop_name, description, shop_category, province, district, sector, cell, latitude, longitude, offers_delivery, delivery_radius, req.params.id]
+    );
+    
+    res.json({ message: 'Shop updated successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

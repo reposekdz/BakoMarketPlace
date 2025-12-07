@@ -50,12 +50,18 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     name: '',
     description: '',
     price: '',
-    compare_at_price: '',
+    original_price: '',
+    category: '',
+    brand: '',
     sku: '',
-    quantity: '',
-    category_id: '',
-    is_published: false
+    stock: '',
+    featured: false,
+    status: 'active',
+    images: [] as string[],
+    variations: [] as any[]
   });
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  const [bulkAction, setBulkAction] = useState('');
 
   const token = localStorage.getItem('token');
 
@@ -117,6 +123,9 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         setIsProductDialogOpen(false);
         loadData();
         resetProductForm();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Failed to create product');
       }
     } catch (error) {
       toast.error('Failed to create product');
@@ -164,19 +173,32 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     }
   };
 
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setProductForm({
-      name: product.name,
-      description: '',
-      price: product.price.toString(),
-      compare_at_price: '',
-      sku: product.sku,
-      quantity: product.quantity.toString(),
-      category_id: '',
-      is_published: product.is_published
-    });
-    setIsProductDialogOpen(true);
+  const handleEditProduct = async (product: Product) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/products/${product.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      setEditingProduct(data);
+      setProductForm({
+        name: data.name,
+        description: data.description || '',
+        price: data.price.toString(),
+        original_price: data.original_price?.toString() || '',
+        category: data.category || '',
+        brand: data.brand || '',
+        sku: data.sku || '',
+        stock: data.stock?.toString() || '0',
+        featured: data.featured || false,
+        status: data.status || 'active',
+        images: data.images ? JSON.parse(data.images) : [],
+        variations: data.variations ? JSON.parse(data.variations) : []
+      });
+      setIsProductDialogOpen(true);
+    } catch (error) {
+      toast.error('Failed to load product details');
+    }
   };
 
   const resetProductForm = () => {
@@ -184,12 +206,74 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       name: '',
       description: '',
       price: '',
-      compare_at_price: '',
+      original_price: '',
+      category: '',
+      brand: '',
       sku: '',
-      quantity: '',
-      category_id: '',
-      is_published: false
+      stock: '',
+      featured: false,
+      status: 'active',
+      images: [],
+      variations: []
     });
+  };
+
+  const handleBulkAction = async () => {
+    if (selectedProducts.length === 0 || !bulkAction) return;
+    
+    try {
+      if (bulkAction === 'delete') {
+        const res = await fetch(`${API_URL}/admin/products/bulk-delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ productIds: selectedProducts })
+        });
+        if (res.ok) {
+          toast.success('Products deleted successfully');
+          setSelectedProducts([]);
+          loadData();
+        }
+      } else {
+        const updates: any = {};
+        if (bulkAction === 'activate') updates.status = 'active';
+        if (bulkAction === 'deactivate') updates.status = 'draft';
+        if (bulkAction === 'feature') updates.featured = true;
+        
+        const res = await fetch(`${API_URL}/admin/products/bulk-update`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ productIds: selectedProducts, updates })
+        });
+        if (res.ok) {
+          toast.success('Products updated successfully');
+          setSelectedProducts([]);
+          loadData();
+        }
+      }
+    } catch (error) {
+      toast.error('Bulk action failed');
+    }
+  };
+
+  const handleDuplicateProduct = async (id: number) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/products/${id}/duplicate`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast.success('Product duplicated successfully');
+        loadData();
+      }
+    } catch (error) {
+      toast.error('Failed to duplicate product');
+    }
   };
 
   const handleUpdateSellerStatus = async (id: number, status: string) => {
