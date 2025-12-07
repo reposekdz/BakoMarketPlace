@@ -29,6 +29,10 @@ import expoRoutes2 from './routes/expos.js';
 import innovationRoutes from './routes/innovations.js';
 import streamingRoutes from './routes/streaming.js';
 import revolutionaryRoutes from './routes/revolutionary.js';
+import translationRoutes from './routes/translations.js';
+import currencyRoutes from './routes/currencies.js';
+import advancedFeaturesRoutes from './routes/advanced-features.js';
+import aiFeaturesRoutes from './routes/ai-features.js';
 
 dotenv.config();
 
@@ -68,6 +72,10 @@ app.use('/api/expo', expoRoutes2);
 app.use('/api/innovations', innovationRoutes);
 app.use('/api/streaming', streamingRoutes);
 app.use('/api/revolutionary', revolutionaryRoutes);
+app.use('/api/translations', translationRoutes);
+app.use('/api/currencies', currencyRoutes);
+app.use('/api/advanced', advancedFeaturesRoutes);
+app.use('/api/ai', aiFeaturesRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
