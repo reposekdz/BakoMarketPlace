@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Mail, Lock, User, Phone, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { X, Mail, Lock, User, Phone, Eye, EyeOff, Sparkles, ArrowLeft, Shield, Zap, Star, TrendingUp, Award, Gift, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 
@@ -63,27 +63,101 @@ export function ModernAuthPanel({ isOpen, onClose, onLogin }: ModernAuthPanelPro
   };
 
   return (
-    <div className="fixed inset-0 z-[200] pointer-events-none">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto" onClick={onClose} />
-      
-      <div className="absolute right-0 top-0 bottom-0 w-full max-w-md pointer-events-auto animate-in slide-in-from-right duration-300">
-        <Card className="h-full rounded-none shadow-2xl flex flex-col bg-gradient-to-br from-white to-gray-50">
-          <div className="p-6 border-b bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-6 h-6" />
-                <h2 className="text-2xl font-bold">{mode === 'login' ? 'Welcome Back' : 'Join Us'}</h2>
+    <div className="fixed inset-0 z-[200] bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
+        <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
+      </div>
+
+      {/* Header */}
+      <div className="relative z-10 bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <ArrowLeft className="w-5 h-5 text-white" />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-lg">B</span>
               </div>
-              <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-white/20">
-                <X className="w-5 h-5" />
-              </Button>
+              <span className="text-white font-bold text-xl">Bako Marketplace</span>
             </div>
-            <p className="text-white/90 text-sm">
-              {mode === 'login' ? 'Sign in to access your account' : 'Create an account to get started'}
+          </div>
+          <div className="flex items-center gap-4 text-white/80 text-sm">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span>Secure Login</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              <span>Fast Checkout</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
+        <div className="grid grid-cols-2 gap-12 items-center">
+          {/* Left Side - Benefits */}
+          <div className="text-white space-y-8">
+            <div>
+              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent">
+                {mode === 'login' ? 'Welcome Back!' : 'Join Bako Today'}
+              </h1>
+              <p className="text-xl text-white/80">
+                {mode === 'login' 
+                  ? 'Continue your shopping journey with exclusive deals' 
+                  : 'Start shopping with millions of products worldwide'}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                { icon: Star, title: 'Premium Quality', desc: 'Verified sellers & authentic products' },
+                { icon: TrendingUp, title: 'Best Prices', desc: 'Competitive pricing & daily deals' },
+                { icon: Award, title: 'Rewards Program', desc: 'Earn points on every purchase' },
+                { icon: Gift, title: 'Exclusive Offers', desc: 'Member-only discounts & perks' }
+              ].map((benefit, i) => (
+                <div key={i} className="flex items-start gap-4 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/20 transition-all">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <benefit.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">{benefit.title}</h3>
+                    <p className="text-white/70 text-sm">{benefit.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-6 bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-2xl border border-white/20">
+              <div className="flex items-center gap-4 mb-4">
+                <CheckCircle className="w-8 h-8 text-green-400" />
+                <div>
+                  <p className="text-2xl font-bold">2M+</p>
+                  <p className="text-white/70 text-sm">Happy Customers</p>
+                </div>
+              </div>
+              <p className="text-white/80 text-sm">Join millions of satisfied shoppers worldwide</p>
+            </div>
+          </div>
+
+          {/* Right Side - Form */}
+          <Card className="bg-white/95 backdrop-blur-xl shadow-2xl border-0 p-8 rounded-3xl">
+
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              {mode === 'login' ? 'Sign In' : 'Create Account'}
+            </h2>
+            <p className="text-gray-600">
+              {mode === 'login' ? 'Enter your credentials to continue' : 'Fill in your details to get started'}
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="overflow-y-auto">
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === 'signup' && (
                 <>
@@ -193,7 +267,7 @@ export function ModernAuthPanel({ isOpen, onClose, onLogin }: ModernAuthPanelPro
             </form>
           </div>
 
-          <div className="p-6 border-t bg-gray-50">
+          <div className="mt-6 pt-6 border-t">
             <p className="text-center text-sm text-gray-600">
               {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
               <button
@@ -205,6 +279,7 @@ export function ModernAuthPanel({ isOpen, onClose, onLogin }: ModernAuthPanelPro
             </p>
           </div>
         </Card>
+        </div>
       </div>
     </div>
   );
