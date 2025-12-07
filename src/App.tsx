@@ -14,6 +14,7 @@ import { FlashDeals } from './components/FlashDeals';
 import { RewardsProgram } from './components/RewardsProgram';
 import { SellerDashboard } from './components/SellerDashboard';
 import { OnlineExpo } from './components/OnlineExpo';
+import { UltimateExpoHub } from './components/UltimateExpoHub';
 import { ExpoApplicationForm } from './components/ExpoApplicationForm';
 import { SponsorshipForm } from './components/SponsorshipForm';
 import { SponsorshipPage } from './components/SponsorshipPage';
@@ -339,7 +340,7 @@ export default function App() {
       )}
 
       {currentView === 'expo' && (
-        <OnlineExpo 
+        <UltimateExpoHub 
           onViewProduct={viewProduct}
           user={user}
         />

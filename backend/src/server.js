@@ -35,6 +35,8 @@ import advancedFeaturesRoutes from './routes/advanced-features.js';
 import aiFeaturesRoutes from './routes/ai-features.js';
 import seedCurrenciesRoutes from './routes/seed-currencies.js';
 import expoApplicationsRoutes from './routes/expo-applications.js';
+import advancedExpoRoutes from './routes/advanced-expo.js';
+import advancedAuthRoutes from './routes/advanced-auth.js';
 
 dotenv.config();
 
@@ -80,6 +82,8 @@ app.use('/api/advanced', advancedFeaturesRoutes);
 app.use('/api/ai', aiFeaturesRoutes);
 app.use('/api/seed-data', seedCurrenciesRoutes);
 app.use('/api/expo-apply', expoApplicationsRoutes);
+app.use('/api/advanced-expo', advancedExpoRoutes);
+app.use('/api/advanced-auth', advancedAuthRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);

@@ -1,6 +1,8 @@
 import { Search, ShoppingCart, Heart, User, Bell, Globe, TrendingUp, Sparkles, DollarSign, Award, Store, TrendingDown, Calendar, LogOut, Settings, Package, Home, MapPin, MessageSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useLanguage } from './LanguageProvider';
+import { AdvancedCurrencyDropdown } from './AdvancedCurrencyDropdown';
+import { AdvancedLanguageDropdown } from './AdvancedLanguageDropdown';
 
 interface HeaderProps {
   searchQuery: string;
@@ -51,40 +53,8 @@ export function Header({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <select 
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="bg-white/20 px-3 py-1 rounded text-white border-none outline-none cursor-pointer"
-            >
-              <option value="USD">USD $</option>
-              <option value="EUR">EUR €</option>
-              <option value="GBP">GBP £</option>
-              <option value="JPY">JPY ¥</option>
-              <option value="RWF">RWF Fr</option>
-              <option value="KES">KES KSh</option>
-              <option value="UGX">UGX USh</option>
-              <option value="TZS">TZS TSh</option>
-              <option value="ETB">ETB Br</option>
-              <option value="GHS">GHS ₵</option>
-              <option value="NGN">NGN ₦</option>
-              <option value="ZAR">ZAR R</option>
-            </select>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="bg-white/20 px-3 py-1 rounded text-white border-none outline-none cursor-pointer flex items-center gap-1"
-            >
-              <option value="en">🇺🇸 EN</option>
-              <option value="rw">🇷🇼 RW</option>
-              <option value="fr">🇫🇷 FR</option>
-              <option value="sw">🇹🇿 SW</option>
-              <option value="es">🇪🇸 ES</option>
-              <option value="pt">🇵🇹 PT</option>
-              <option value="ar">🇸🇦 AR</option>
-              <option value="zh">🇨🇳 ZH</option>
-              <option value="hi">🇮🇳 HI</option>
-              <option value="de">🇩🇪 DE</option>
-            </select>
+            <AdvancedCurrencyDropdown value={currency} onChange={setCurrency} />
+            <AdvancedLanguageDropdown value={language} onChange={setLanguage} />
             <button 
               onClick={() => onNavigate?.('expo')}
               className="flex items-center gap-1 hover:opacity-80"
