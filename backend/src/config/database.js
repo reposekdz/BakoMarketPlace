@@ -1399,6 +1399,46 @@ export const initDatabase = async () => {
       ) ENGINE=InnoDB
     `);
 
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS expo_booth_applications (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        expo_id INT NOT NULL,
+        shop_id INT NOT NULL,
+        booth_type ENUM('standard', 'premium', 'vip') DEFAULT 'standard',
+        company_name VARCHAR(255),
+        contact_email VARCHAR(255),
+        contact_phone VARCHAR(20),
+        description TEXT,
+        status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (expo_id) REFERENCES expo_events(id) ON DELETE CASCADE,
+        FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+        INDEX idx_expo_app (expo_id),
+        INDEX idx_status_app (status)
+      ) ENGINE=InnoDB
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS expo_sponsors (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        expo_id INT NOT NULL,
+        company_name VARCHAR(255) NOT NULL,
+        contact_name VARCHAR(255),
+        email VARCHAR(255),
+        phone VARCHAR(20),
+        package_type ENUM('bronze', 'silver', 'gold', 'platinum') NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        logo_url VARCHAR(500),
+        website VARCHAR(500),
+        status ENUM('pending', 'active', 'expired') DEFAULT 'pending',
+        benefits JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (expo_id) REFERENCES expo_events(id) ON DELETE CASCADE,
+        INDEX idx_expo_sponsor (expo_id),
+        INDEX idx_status_sponsor (status)
+      ) ENGINE=InnoDB
+    `);
+
     connection.release();
     console.log('✅ Database initialized successfully');
   } catch (error) {

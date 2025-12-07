@@ -14,6 +14,8 @@ import { FlashDeals } from './components/FlashDeals';
 import { RewardsProgram } from './components/RewardsProgram';
 import { SellerDashboard } from './components/SellerDashboard';
 import { OnlineExpo } from './components/OnlineExpo';
+import { ExpoApplicationForm } from './components/ExpoApplicationForm';
+import { SponsorshipForm } from './components/SponsorshipForm';
 import { SponsorshipPage } from './components/SponsorshipPage';
 import { BackToTop } from './components/BackToTop';
 import { LanguageProvider } from './components/LanguageProvider';
@@ -24,6 +26,7 @@ import { NearbyProducts } from './components/NearbyProducts';
 import { NotificationCenter } from './components/NotificationCenter';
 import { ShopBrowser } from './components/ShopBrowser';
 import { ShopView } from './components/ShopView';
+import { ModernAuthPanel } from './components/ModernAuthPanel';
 import { Toaster } from 'sonner@2.0.3';
 
 export interface Product {
@@ -99,7 +102,7 @@ export default function App() {
   const [user, setUser] = useState<any>(null);
   const [adminUser, setAdminUser] = useState<any>(null);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [currentView, setCurrentView] = useState<'home' | 'product' | 'seller-dashboard' | 'expo' | 'sponsorship' | 'admin' | 'messages' | 'nearby' | 'shops' | 'shop-view'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'product' | 'seller-dashboard' | 'expo' | 'sponsorship' | 'admin' | 'messages' | 'nearby' | 'shops' | 'shop-view' | 'expo-apply' | 'sponsor-apply'>('home');
   const [selectedShopId, setSelectedShopId] = useState<number | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -121,7 +124,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currency, setCurrency] = useState('USD');
   const [rewardPoints, setRewardPoints] = useState(1250);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAuthPanel, setShowAuthPanel] = useState(false);
 
 
 
@@ -182,7 +185,7 @@ export default function App() {
 
   const handleLogin = (userData: any) => {
     setUser(userData);
-    setShowAuthModal(false);
+    setShowAuthPanel(false);
     setCurrentView('home');
   };
 
@@ -190,7 +193,7 @@ export default function App() {
     if (user) {
       setUser(null);
     } else {
-      setShowAuthModal(true);
+      setShowAuthPanel(true);
     }
   };
 
@@ -342,6 +345,27 @@ export default function App() {
         />
       )}
 
+      {currentView === 'expo-apply' && (
+        <div className="max-w-2xl mx-auto p-6">
+          <ExpoApplicationForm 
+            expoId={1}
+            expoName="Tech Innovation Expo 2025"
+            shopId={user?.shopId}
+            onSuccess={() => setCurrentView('expo')}
+          />
+        </div>
+      )}
+
+      {currentView === 'sponsor-apply' && (
+        <div className="max-w-2xl mx-auto p-6">
+          <SponsorshipForm 
+            expoId={1}
+            expoName="Tech Innovation Expo 2025"
+            onSuccess={() => setCurrentView('expo')}
+          />
+        </div>
+      )}
+
       {currentView === 'sponsorship' && (
         <SponsorshipPage 
           user={user}
@@ -424,19 +448,11 @@ export default function App() {
 
         <BackToTop />
 
-        {showAuthModal && (
-          <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-6">
-            <div className="relative max-w-7xl w-full">
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="absolute -top-4 -right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 z-10 text-gray-700 font-bold text-xl"
-              >
-                ✕
-              </button>
-              <AuthPages onLogin={handleLogin} onClose={() => setShowAuthModal(false)} />
-            </div>
-          </div>
-        )}
+        <ModernAuthPanel 
+          isOpen={showAuthPanel}
+          onClose={() => setShowAuthPanel(false)}
+          onLogin={handleLogin}
+        />
 
         <Toaster position="bottom-right" />
       </div>

@@ -33,6 +33,8 @@ import translationRoutes from './routes/translations.js';
 import currencyRoutes from './routes/currencies.js';
 import advancedFeaturesRoutes from './routes/advanced-features.js';
 import aiFeaturesRoutes from './routes/ai-features.js';
+import seedCurrenciesRoutes from './routes/seed-currencies.js';
+import expoApplicationsRoutes from './routes/expo-applications.js';
 
 dotenv.config();
 
@@ -76,6 +78,8 @@ app.use('/api/translations', translationRoutes);
 app.use('/api/currencies', currencyRoutes);
 app.use('/api/advanced', advancedFeaturesRoutes);
 app.use('/api/ai', aiFeaturesRoutes);
+app.use('/api/seed-data', seedCurrenciesRoutes);
+app.use('/api/expo-apply', expoApplicationsRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);

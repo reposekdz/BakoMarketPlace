@@ -12,8 +12,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { toast } from 'sonner';
 import { 
   Package, Users, DollarSign, ShoppingCart, Plus, Edit, Trash2, 
-  Search, Filter, Download, Upload, BarChart3, Activity, Globe, Settings 
+  Search, Filter, Download, Upload, BarChart3, Activity, Globe, Settings, TrendingUp, Calendar 
 } from 'lucide-react';
+import { AdvertisementManager } from './AdvertisementManager';
+import { ExpoManager } from './ExpoManager';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -315,7 +317,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 mb-8">
+          <TabsList className="grid w-full grid-cols-7 mb-8">
             <TabsTrigger value="dashboard">
               <BarChart3 className="w-4 h-4 mr-2" />
               Dashboard
@@ -328,13 +330,21 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <Users className="w-4 h-4 mr-2" />
               Sellers
             </TabsTrigger>
+            <TabsTrigger value="advertisements">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Ads
+            </TabsTrigger>
+            <TabsTrigger value="expo">
+              <Calendar className="w-4 h-4 mr-2" />
+              Expo
+            </TabsTrigger>
             <TabsTrigger value="translations">
               <Globe className="w-4 h-4 mr-2" />
               Translations
             </TabsTrigger>
             <TabsTrigger value="logs">
               <Activity className="w-4 h-4 mr-2" />
-              Activity Logs
+              Logs
             </TabsTrigger>
           </TabsList>
 
@@ -594,6 +604,14 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 </TableBody>
               </Table>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="advertisements">
+            <AdvertisementManager />
+          </TabsContent>
+
+          <TabsContent value="expo">
+            <ExpoManager />
           </TabsContent>
 
           <TabsContent value="translations">

@@ -25,6 +25,7 @@ export function AdvancedAdsManager({ placement }: { placement: string }) {
 
   useEffect(() => {
     loadAds();
+    loadLocalAds();
   }, [placement]);
 
   useEffect(() => {
@@ -49,6 +50,16 @@ export function AdvancedAdsManager({ placement }: { placement: string }) {
       setAds(data);
     } catch (error) {
       console.error('Failed to load ads');
+    }
+  };
+
+  const loadLocalAds = () => {
+    try {
+      const localAds = JSON.parse(localStorage.getItem('localAds') || '[]');
+      const filteredAds = localAds.filter((ad: any) => ad.placement === placement && ad.status === 'active');
+      setAds(prev => [...prev, ...filteredAds]);
+    } catch (error) {
+      console.error('Failed to load local ads');
     }
   };
 
