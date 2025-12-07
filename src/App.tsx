@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthPages } from './components/AuthPages';
 import { Header } from './components/Header';
 import { AdvancedSidebar } from './components/AdvancedSidebar';
@@ -15,6 +15,15 @@ import { RewardsProgram } from './components/RewardsProgram';
 import { SellerDashboard } from './components/SellerDashboard';
 import { OnlineExpo } from './components/OnlineExpo';
 import { SponsorshipPage } from './components/SponsorshipPage';
+import { BackToTop } from './components/BackToTop';
+import { LanguageProvider } from './components/LanguageProvider';
+import { AdminLogin } from './components/AdminLogin';
+import { AdminDashboard } from './components/AdminDashboard';
+import { ConversationHub } from './components/ConversationHub';
+import { NearbyProducts } from './components/NearbyProducts';
+import { NotificationCenter } from './components/NotificationCenter';
+import { ShopBrowser } from './components/ShopBrowser';
+import { ShopView } from './components/ShopView';
 import { Toaster } from 'sonner@2.0.3';
 
 export interface Product {
@@ -88,7 +97,10 @@ export interface Question {
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
-  const [currentView, setCurrentView] = useState<'home' | 'product' | 'seller-dashboard' | 'expo' | 'sponsorship'>('home');
+  const [adminUser, setAdminUser] = useState<any>(null);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [currentView, setCurrentView] = useState<'home' | 'product' | 'seller-dashboard' | 'expo' | 'sponsorship' | 'admin' | 'messages' | 'nearby' | 'shops' | 'shop-view'>('home');
+  const [selectedShopId, setSelectedShopId] = useState<number | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,6 +121,9 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currency, setCurrency] = useState('USD');
   const [rewardPoints, setRewardPoints] = useState(1250);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+
 
   const viewProduct = (product: Product) => {
     setSelectedProductId(product.id);
@@ -167,38 +182,89 @@ export default function App() {
 
   const handleLogin = (userData: any) => {
     setUser(userData);
-    if (userData.isSeller) {
-      setCurrentView('seller-dashboard');
+    setShowAuthModal(false);
+    setCurrentView('home');
+  };
+
+  const handleSignInClick = () => {
+    if (user) {
+      setUser(null);
+    } else {
+      setShowAuthModal(true);
     }
   };
 
-  if (!user) {
-    return <AuthPages onLogin={handleLogin} />;
+  const handleAdminLogin = (token: string, user: any) => {
+    setAdminUser(user);
+    setShowAdminLogin(false);
+    setCurrentView('admin');
+  };
+
+  const handleAdminLogout = () => {
+    setAdminUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('adminUser');
+    setCurrentView('home');
+  };
+
+  // Check for admin session on mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const savedAdmin = localStorage.getItem('adminUser');
+    if (token && savedAdmin) {
+      setAdminUser(JSON.parse(savedAdmin));
+    }
+  }, []);
+
+  // Show admin dashboard if logged in as admin
+  if (adminUser && currentView === 'admin') {
+    return (
+      <LanguageProvider>
+        <AdminDashboard onLogout={handleAdminLogout} />
+        <Toaster position="bottom-right" />
+      </LanguageProvider>
+    );
+  }
+
+  // Show admin login
+  if (showAdminLogin) {
+    return (
+      <LanguageProvider>
+        <AdminLogin onLogin={handleAdminLogin} />
+        <Toaster position="bottom-right" />
+      </LanguageProvider>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
-        wishlistCount={wishlist.length}
-        onCartClick={() => setIsCartOpen(true)}
-        onWishlistClick={() => setIsWishlistOpen(true)}
-        currency={currency}
-        setCurrency={setCurrency}
-        rewardPoints={rewardPoints}
-        user={user}
-        onNavigate={setCurrentView}
-        currentView={currentView}
-      />
+    <LanguageProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Header 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+          wishlistCount={wishlist.length}
+          onCartClick={() => setIsCartOpen(true)}
+          onWishlistClick={() => setIsWishlistOpen(true)}
+          currency={currency}
+          setCurrency={setCurrency}
+          rewardPoints={rewardPoints}
+          user={user}
+          onNavigate={setCurrentView}
+          currentView={currentView}
+          onSignInClick={handleSignInClick}
+          onHomeClick={() => setCurrentView('home')}
+          onAdminClick={() => setShowAdminLogin(true)}
+        />
       
+      <div className="pt-[180px]">
       {currentView === 'home' && (
         <>
           <FlashDeals onViewProduct={viewProduct} />
           
-          <div className="flex max-w-[1920px] mx-auto">
-            <AdvancedSidebar 
+          <div className="flex max-w-[1920px] mx-auto pt-4">
+            <div className="w-80 flex-shrink-0">
+              <AdvancedSidebar 
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
               priceRange={priceRange}
@@ -213,9 +279,10 @@ export default function App() {
               setMinRating={setMinRating}
               freeShipping={freeShipping}
               setFreeShipping={setFreeShipping}
-            />
+              />
+            </div>
             
-            <main className="flex-1 p-6">
+            <main className="flex-1 p-6 overflow-y-auto">
               <ProductGrid 
                 searchQuery={searchQuery}
                 selectedCategory={selectedCategory}
@@ -282,6 +349,37 @@ export default function App() {
         />
       )}
 
+      {currentView === 'messages' && user && (
+        <div className="max-w-7xl mx-auto p-6">
+          <ConversationHub userId={user.userId} />
+        </div>
+      )}
+
+      {currentView === 'nearby' && (
+        <div className="max-w-7xl mx-auto p-6">
+          <NearbyProducts onViewProduct={viewProduct} />
+        </div>
+      )}
+
+      {currentView === 'shops' && (
+        <div className="max-w-7xl mx-auto p-6">
+          <ShopBrowser onViewShop={(shopId) => { setSelectedShopId(shopId); setCurrentView('shop-view'); }} />
+        </div>
+      )}
+
+      {currentView === 'shop-view' && selectedShopId && (
+        <div className="max-w-7xl mx-auto p-6">
+          <ShopView 
+            shopId={selectedShopId} 
+            onBack={() => setCurrentView('shops')} 
+            onAddToCart={addToCart}
+            user={user}
+          />
+        </div>
+      )}
+
+
+
       {comparisonList.length > 0 && (
         <ComparisonBar 
           products={comparisonList}
@@ -324,7 +422,25 @@ export default function App() {
         onAddToCart={addToCart}
       />
 
-      <Toaster position="bottom-right" />
-    </div>
+        <BackToTop />
+
+        {showAuthModal && (
+          <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-6">
+            <div className="relative max-w-7xl w-full">
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="absolute -top-4 -right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 z-10 text-gray-700 font-bold text-xl"
+              >
+                ✕
+              </button>
+              <AuthPages onLogin={handleLogin} onClose={() => setShowAuthModal(false)} />
+            </div>
+          </div>
+        )}
+
+        <Toaster position="bottom-right" />
+      </div>
+      </div>
+    </LanguageProvider>
   );
 }
