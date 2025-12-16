@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Mail, Lock, User, Phone, MapPin, Building, Globe, Eye, EyeOff, Facebook, Chrome, Apple, Shield, Check, Zap, Store, TrendingUp } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface AuthPagesProps {
   onLogin: (userData: any) => void;

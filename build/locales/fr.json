@@ -1,0 +1,19 @@
+{
+  "all_products": "Tous les produits",
+  "products_found": "{{count}} produits trouvés",
+  "relevance": "Pertinence",
+  "price_low_high": "Prix : Croissant",
+  "price_high_low": "Prix : Décroissant",
+  "highest_rated": "Mieux notés",
+  "most_reviews": "Plus d'avis",
+  "quick_view": "Aperçu rapide",
+  "add_to_cart": "Ajouter au panier",
+  "added_to_cart": "Ajouté {{productName}} au panier",
+  "remove_from_wishlist": "Retiré de la liste de souhaits",
+  "add_to_wishlist": "Ajouté à la liste de souhaits",
+  "added_to_comparison": "Ajouté à la comparaison",
+  "compare": "Comparer",
+  "wishlist": "Liste de souhaits",
+  "reviews": "Avis",
+  "free_shipping": "Livraison gratuite"
+}

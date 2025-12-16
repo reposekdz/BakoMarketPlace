@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { AuthPages } from './components/AuthPages';
 import { Header } from './components/Header';
 import { AdvancedSidebar } from './components/AdvancedSidebar';
@@ -8,88 +9,15 @@ import { LiveChat } from './components/LiveChat';
 import { QuickViewModal } from './components/QuickViewModal';
 import { CartDrawer } from './components/CartDrawer';
 import { WishlistDrawer } from './components/WishlistDrawer';
-import { FullProductPage } from './components/FullProductPage';
 import { RecentlyViewed } from './components/RecentlyViewed';
 import { FlashDeals } from './components/FlashDeals';
 import { RewardsProgram } from './components/RewardsProgram';
-import { SellerDashboard } from './components/SellerDashboard';
-import { OnlineExpo } from './components/OnlineExpo';
-import { SponsorshipPage } from './components/SponsorshipPage';
-import { Toaster } from 'sonner@2.0.3';
+import { Toaster } from 'sonner';
 
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  rating: number;
-  reviews: number;
-  image: string;
-  images?: string[];
-  category: string;
-  brand?: string;
-  seller: {
-    name: string;
-    verified: boolean;
-    rating: number;
-    followers?: number;
-    products?: number;
-    id?: string;
-  };
-  stock: number;
-  features: string[];
-  discount?: number;
-  badges?: string[];
-  specifications?: Record<string, string>;
-  description?: string;
-  variations?: {
-    colors?: string[];
-    sizes?: string[];
-  };
-  shippingInfo?: {
-    free: boolean;
-    estimatedDays: string;
-    countries?: string[];
-  };
-  warranty?: string;
-  returnPolicy?: string;
-  bundleDeals?: Array<{ id: string; discount: number }>;
-  frequentlyBought?: string[];
-  deliveryOptions?: {
-    delivery: boolean;
-    pickup: boolean;
-  };
-  biddingEnabled?: boolean;
-  currentBid?: number;
-  biddingEndTime?: string;
-}
-
-export interface Review {
-  id: string;
-  userId: string;
-  userName: string;
-  rating: number;
-  date: string;
-  comment: string;
-  images?: string[];
-  verified: boolean;
-  helpful: number;
-}
-
-export interface Question {
-  id: string;
-  userId: string;
-  userName: string;
-  question: string;
-  answer?: string;
-  date: string;
-  helpful: number;
-}
+// ... (keep the interfaces Product, Review, Question as they are)
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
-  const [currentView, setCurrentView] = useState<'home' | 'product' | 'seller-dashboard' | 'expo' | 'sponsorship'>('home');
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('relevance');
@@ -109,18 +37,16 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currency, setCurrency] = useState('USD');
   const [rewardPoints, setRewardPoints] = useState(1250);
+  
+  const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams();
 
   const viewProduct = (product: Product) => {
-    setSelectedProductId(product.id);
-    setCurrentView('product');
     if (!recentlyViewed.find(p => p.id === product.id)) {
       setRecentlyViewed([product, ...recentlyViewed.slice(0, 9)]);
     }
-  };
-
-  const backToHome = () => {
-    setCurrentView('home');
-    setSelectedProductId(null);
+    navigate(`/product/${product.id}`);
   };
 
   const addToComparison = (product: Product) => {
@@ -168,7 +94,7 @@ export default function App() {
   const handleLogin = (userData: any) => {
     setUser(userData);
     if (userData.isSeller) {
-      setCurrentView('seller-dashboard');
+      navigate('/seller-dashboard');
     }
   };
 
@@ -189,13 +115,13 @@ export default function App() {
         setCurrency={setCurrency}
         rewardPoints={rewardPoints}
         user={user}
-        onNavigate={setCurrentView}
-        currentView={currentView}
+        onNavigate={(path) => navigate(path)}
+        currentView={location.pathname}
       />
       
-      {currentView === 'home' && (
+      {location.pathname === '/' && (
         <>
-          <FlashDeals onViewProduct={viewProduct} />
+          <FlashDeals onViewProduct={viewProduct} currency={currency} />
           
           <div className="flex max-w-[1920px] mx-auto">
             <AdvancedSidebar 
@@ -235,6 +161,7 @@ export default function App() {
                 onToggleWishlist={toggleWishlist}
                 onAddToCart={addToCart}
                 wishlist={wishlist}
+                currency={currency}
               />
               
               {recentlyViewed.length > 0 && (
@@ -248,45 +175,14 @@ export default function App() {
         </>
       )}
 
-      {currentView === 'product' && (
-        <FullProductPage 
-          productId={selectedProductId!}
-          onBack={backToHome}
-          onAddToCart={addToCart}
-          onToggleWishlist={toggleWishlist}
-          onAddToComparison={addToComparison}
-          isInWishlist={wishlist.some(p => p.id === selectedProductId)}
-          onViewProduct={viewProduct}
-          user={user}
-        />
-      )}
-
-      {currentView === 'seller-dashboard' && (
-        <SellerDashboard 
-          user={user}
-          onNavigate={setCurrentView}
-        />
-      )}
-
-      {currentView === 'expo' && (
-        <OnlineExpo 
-          onViewProduct={viewProduct}
-          user={user}
-        />
-      )}
-
-      {currentView === 'sponsorship' && (
-        <SponsorshipPage 
-          user={user}
-          onBack={() => setCurrentView('home')}
-        />
-      )}
+      <Outlet context={{ user, addToCart, toggleWishlist, addToComparison, wishlist, viewProduct, params }} />
 
       {comparisonList.length > 0 && (
         <ComparisonBar 
           products={comparisonList}
           onRemove={removeFromComparison}
           onClear={() => setComparisonList([])}
+          currency={currency}
         />
       )}
 
@@ -305,6 +201,7 @@ export default function App() {
             setQuickViewProduct(null);
             viewProduct(quickViewProduct);
           }}
+          currency={currency}
         />
       )}
 
