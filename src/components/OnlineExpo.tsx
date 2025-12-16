@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Calendar, ChevronsUpDown, Check, Star, Zap, Trophy, TrendingUp, LayoutGrid, ShoppingCart, Search, Filter, Plus, Building, Eye, X, Tag, List, ArrowUpDown } from 'lucide-react';
 import { Product } from '../App';
 import { CreateMarket, Market } from './CreateMarket';
@@ -50,7 +51,7 @@ const MarketCard = ({ market }: { market: Market }) => (
       <h3 className="text-xl font-bold text-card-foreground truncate group-hover:text-primary transition-colors">{market.name}</h3>
       <p className="text-sm text-muted-foreground h-10 mt-1.5 overflow-hidden">{market.description}</p>
       <div className="mt-3 flex flex-wrap gap-2">{market.tags?.slice(0,3).map(tag => <span key={tag} className="px-2.5 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium">{tag}</span>)}</div>
-      <Button className="w-full mt-4" asChild><a href="#"><Eye size={16}/>View Market</a></Button>
+      <Button className="w-full mt-4" asChild><Link to={`/market/${market.id}`}><Eye size={16} className="mr-2"/>View Market</Link></Button>
     </CardContent>
   </Card>
 );
@@ -66,7 +67,7 @@ const MarketListItem = ({ market }: { market: Market }) => (
                 <h3 className="text-lg font-bold text-card-foreground group-hover:text-primary transition-colors">{market.name}</h3>
                 <p className="text-sm text-muted-foreground mt-1">{market.description}</p>
             </div>
-            <Button variant="outline" asChild><a href="#"><Eye size={14} className="mr-2"/>View</a></Button>
+            <Button variant="outline" asChild><Link to={`/market/${market.id}`}><Eye size={14} className="mr-2"/>View</Link></Button>
         </div>
         <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
