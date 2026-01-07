@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Grid, List, ArrowUpDown, TrendingUp, Eye, GitCompare, Heart, ShoppingCart, Star, Award, Zap, Truck, Shield } from 'lucide-react';
 import { Product } from '../App';
-import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
-import { formatCurrency, convertCurrency } from '../utils/currency';
+import { toast } from 'sonner@2.0.3';
 
 interface ProductGridProps {
   searchQuery: string;
@@ -24,8 +22,126 @@ interface ProductGridProps {
   onToggleWishlist: (product: Product) => void;
   onAddToCart: (product: Product) => void;
   wishlist: Product[];
-  currency: string;
 }
+
+const mockProducts: Product[] = [
+  {
+    id: '1',
+    name: 'Premium Ultrabook Pro 15"',
+    price: 1299,
+    originalPrice: 1599,
+    rating: 4.8,
+    reviews: 2847,
+    image: 'https://images.unsplash.com/photo-1759668358660-0d06064f0f84?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBsYXB0b3AlMjBjb21wdXRlcnxlbnwxfHx8fDE3NjQ5NDcyNzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: 'computers',
+    seller: { name: 'TechGlobal Store', verified: true, rating: 4.9 },
+    stock: 45,
+    features: ['Intel i7 12th Gen', '16GB RAM', '512GB SSD', '15.6" 4K Display'],
+    discount: 19,
+    badges: ['Best Seller', 'Fast Shipping']
+  },
+  {
+    id: '2',
+    name: 'Wireless Noise Cancelling Headphones',
+    price: 299,
+    originalPrice: 399,
+    rating: 4.7,
+    reviews: 1923,
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3aXJlbGVzcyUyMGhlYWRwaG9uZXN8ZW58MXx8fHwxNzY0ODYxMzI2fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: 'electronics',
+    seller: { name: 'AudioPro', verified: true, rating: 4.8 },
+    stock: 120,
+    features: ['Active Noise Cancelling', '40hr Battery', 'Premium Sound', 'Foldable Design'],
+    discount: 25,
+    badges: ['Top Rated', 'Free Shipping']
+  },
+  {
+    id: '3',
+    name: 'Flagship Smartphone 5G',
+    price: 899,
+    originalPrice: 1099,
+    rating: 4.9,
+    reviews: 3421,
+    image: 'https://images.unsplash.com/photo-1732998369893-af4c9a4695fe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzbWFydHBob25lJTIwZGV2aWNlfGVufDF8fHx8MTc2NDg5MTMyN3ww&ixlib=rb-4.1.0&q=80&w=1080',
+    category: 'electronics',
+    seller: { name: 'MobileMart', verified: true, rating: 4.9 },
+    stock: 87,
+    features: ['6.7" AMOLED', '256GB Storage', '108MP Camera', '5000mAh Battery'],
+    discount: 18,
+    badges: ['New Arrival', 'Premium']
+  },
+  {
+    id: '4',
+    name: 'Smart Watch Ultra',
+    price: 449,
+    rating: 4.6,
+    reviews: 1654,
+    image: 'https://images.unsplash.com/photo-1719744755507-a4c856c57cf7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzbWFydHdhdGNoJTIwd2VhcmFibGV8ZW58MXx8fHwxNzY0ODQ4ODg2fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: 'electronics',
+    seller: { name: 'Wearable Tech Co.', verified: true, rating: 4.7 },
+    stock: 203,
+    features: ['GPS Tracking', 'Health Monitoring', 'Water Resistant', '7 Day Battery'],
+    badges: ['Trending']
+  },
+  {
+    id: '5',
+    name: 'Professional DSLR Camera Kit',
+    price: 1899,
+    originalPrice: 2299,
+    rating: 4.9,
+    reviews: 876,
+    image: 'https://images.unsplash.com/photo-1579535984712-92fffbbaa266?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYW1lcmElMjBwaG90b2dyYXBoeXxlbnwxfHx8fDE3NjQ5MjA3MDZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: 'electronics',
+    seller: { name: 'PhotoPro', verified: true, rating: 4.9 },
+    stock: 34,
+    features: ['45MP Sensor', '4K Video', '2 Lens Kit', 'Professional Grade'],
+    discount: 17,
+    badges: ['Pro Choice', 'Limited Stock']
+  },
+  {
+    id: '6',
+    name: 'Next-Gen Gaming Console',
+    price: 499,
+    rating: 4.8,
+    reviews: 5234,
+    image: 'https://images.unsplash.com/photo-1580234797602-22c37b2a6230?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnYW1pbmclMjBjb25zb2xlfGVufDF8fHx8MTc2NDk0OTY2Nnww&ixlib=rb-4.1.0&q=80&w=1080',
+    category: 'electronics',
+    seller: { name: 'Gaming World', verified: true, rating: 4.8 },
+    stock: 156,
+    features: ['4K 120fps', '1TB SSD', 'Ray Tracing', 'Wireless Controller'],
+    badges: ['Hot Deal', 'Best Seller']
+  },
+  {
+    id: '7',
+    name: 'Pro Tablet 12.9"',
+    price: 1099,
+    originalPrice: 1299,
+    rating: 4.7,
+    reviews: 1432,
+    image: 'https://images.unsplash.com/photo-1760708369071-e8a50a8979cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0YWJsZXQlMjBkZXZpY2V8ZW58MXx8fHwxNzY0OTM4MDkxfDA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: 'computers',
+    seller: { name: 'TabletZone', verified: true, rating: 4.8 },
+    stock: 92,
+    features: ['12.9" Liquid Retina', 'M2 Chip', 'Apple Pencil Support', '256GB'],
+    discount: 15,
+    badges: ['Premium', 'Free Stylus']
+  },
+  {
+    id: '8',
+    name: '4K Drone with Camera',
+    price: 799,
+    originalPrice: 999,
+    rating: 4.6,
+    reviews: 743,
+    image: 'https://images.unsplash.com/photo-1583824904181-a8bbedd1e1c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkcm9uZSUyMHF1YWRjb3B0ZXJ8ZW58MXx8fHwxNzY0ODk3Mzc1fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: 'electronics',
+    seller: { name: 'SkyTech', verified: true, rating: 4.7 },
+    stock: 67,
+    features: ['4K Camera', '30min Flight Time', 'GPS Return', 'Obstacle Avoidance'],
+    discount: 20,
+    badges: ['New Technology']
+  }
+];
 
 export function ProductGrid({
   searchQuery,
@@ -45,49 +161,17 @@ export function ProductGrid({
   onAddToComparison,
   onToggleWishlist,
   onAddToCart,
-  wishlist,
-  currency
+  wishlist
 }: ProductGridProps) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const { t } = useTranslation();
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/products');
-        const data = await response.json();
-        const adaptedProducts: Product[] = data.map((p: any) => ({
-          id: p.id.toString(),
-          name: p.name,
-          price: parseFloat(p.price),
-          image: p.imageUrl,
-          description: p.description,
-          rating: 4.5,
-          reviews: 0,
-          category: 'electronics',
-          seller: { name: 'Backend Seller', verified: true, rating: 4.8 },
-          stock: 50,
-          features: [p.description],
-          badges: ['From Backend']
-        }));
-        setProducts(adaptedProducts);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = mockProducts.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
     const matchesBrands = selectedBrands.length === 0 || selectedBrands.includes(product.seller.name);
-    const matchesColors = selectedColors.length === 0 || (product.features && selectedColors.some(color => product.features.includes(color)));
-    const matchesSizes = selectedSizes.length === 0 || (product.features && selectedSizes.some(size => product.features.includes(size)));
+    const matchesColors = selectedColors.length === 0 || selectedColors.some(color => product.features.includes(color));
+    const matchesSizes = selectedSizes.length === 0 || selectedSizes.some(size => product.features.includes(size));
     const matchesRating = product.rating >= minRating;
-    const matchesFreeShipping = !freeShipping || (product.badges && product.badges.includes('Free Shipping'));
+    const matchesFreeShipping = !freeShipping || product.badges?.includes('Free Shipping');
     return matchesSearch && matchesCategory && matchesPrice && matchesBrands && matchesColors && matchesSizes && matchesRating && matchesFreeShipping;
   });
 
@@ -106,9 +190,9 @@ export function ProductGrid({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="mb-1">
-            {selectedCategory === 'all' ? t('all_products') : selectedCategory}
+            {selectedCategory === 'all' ? 'All Products' : selectedCategory}
           </h2>
-          <p className="text-gray-600">{t('products_found', { count: sortedProducts.length })}</p>
+          <p className="text-gray-600">{sortedProducts.length} products found</p>
         </div>
 
         <div className="flex items-center gap-4">
@@ -119,11 +203,11 @@ export function ProductGrid({
               onChange={(e) => setSortBy(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
             >
-              <option value="relevance">{t('relevance')}</option>
-              <option value="price-low">{t('price_low_high')}</option>
-              <option value="price-high">{t('price_high_low')}</option>
-              <option value="rating">{t('highest_rated')}</option>
-              <option value="reviews">{t('most_reviews')}</option>
+              <option value="relevance">Most Relevant</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
+              <option value="reviews">Most Reviews</option>
             </select>
           </div>
 
@@ -163,7 +247,6 @@ export function ProductGrid({
             onToggleWishlist={onToggleWishlist}
             onAddToCart={onAddToCart}
             isInWishlist={wishlist.some(p => p.id === product.id)}
-            currency={currency}
           />
         ))}
       </div>
@@ -180,7 +263,6 @@ interface ProductCardProps {
   onToggleWishlist: (product: Product) => void;
   onAddToCart: (product: Product) => void;
   isInWishlist: boolean;
-  currency: string;
 }
 
 function ProductCard({ 
@@ -191,29 +273,24 @@ function ProductCard({
   onAddToComparison, 
   onToggleWishlist,
   onAddToCart,
-  isInWishlist,
-  currency
+  isInWishlist 
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const { t } = useTranslation();
 
   const handleAddToCart = () => {
     onAddToCart(product);
-    toast.success(t('added_to_cart', { productName: product.name }));
+    toast.success(`${product.name} added to cart!`);
   };
 
   const handleToggleWishlist = () => {
     onToggleWishlist(product);
-    toast.success(isInWishlist ? t('remove_from_wishlist') : t('add_to_wishlist'));
+    toast.success(isInWishlist ? 'Removed from wishlist' : 'Added to wishlist!');
   };
 
   const handleAddToComparison = () => {
     onAddToComparison(product);
-    toast.success(t('added_to_comparison'));
+    toast.success('Added to comparison!');
   };
-  
-  const convertedPrice = convertCurrency(product.price, 'USD', currency);
-  const originalPrice = product.originalPrice ? convertCurrency(product.originalPrice, 'USD', currency) : null;
 
   if (viewMode === 'list') {
     return (
@@ -259,7 +336,7 @@ function ProductCard({
                 <span>{product.rating}</span>
               </div>
               <span className="text-gray-400">•</span>
-              <span className="text-gray-600">{product.reviews.toLocaleString()} {t('reviews')}</span>
+              <span className="text-gray-600">{product.reviews.toLocaleString()} reviews</span>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-4">
@@ -271,7 +348,7 @@ function ProductCard({
             </div>
 
             <ul className="space-y-1 mb-4">
-              {product.features?.slice(0, 3).map((feature, index) => (
+              {product.features.slice(0, 3).map((feature, index) => (
                 <li key={index} className="flex items-center gap-2 text-gray-600">
                   <Shield className="w-4 h-4 text-green-500" />
                   <span>{feature}</span>
@@ -282,17 +359,17 @@ function ProductCard({
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-3">
-                  <span className="text-purple-600">{formatCurrency(convertedPrice, currency)}</span>
-                  {originalPrice && (
+                  <span className="text-purple-600">${product.price}</span>
+                  {product.originalPrice && (
                     <>
-                      <span className="text-gray-400 line-through">{formatCurrency(originalPrice, currency)}</span>
+                      <span className="text-gray-400 line-through">${product.originalPrice}</span>
                       <span className="px-2 py-1 bg-red-100 text-red-600 rounded">-{product.discount}%</span>
                     </>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <Truck className="w-4 h-4 text-green-500" />
-                  <span className="text-sm text-gray-600">{t('free_shipping')}</span>
+                  <span className="text-sm text-gray-600">Free Shipping</span>
                 </div>
               </div>
               
@@ -301,13 +378,13 @@ function ProductCard({
                   onClick={() => onQuickView(product)}
                   className="px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
                 >
-                  {t('quick_view')}
+                  Quick View
                 </button>
                 <button
                   onClick={handleAddToCart}
                   className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg hover:shadow-lg transition-shadow"
                 >
-                  {t('add_to_cart')}
+                  Add to Cart
                 </button>
               </div>
             </div>
@@ -350,21 +427,21 @@ function ProductCard({
           <button
             onClick={() => onQuickView(product)}
             className="p-2 bg-white rounded-lg shadow-lg hover:bg-purple-50 transition-colors"
-            title={t('quick_view')}
+            title="Quick View"
           >
             <Eye className="w-5 h-5 text-purple-600" />
           </button>
           <button
             onClick={handleAddToComparison}
             className="p-2 bg-white rounded-lg shadow-lg hover:bg-purple-50 transition-colors"
-            title={t('compare')}
+            title="Compare"
           >
             <GitCompare className="w-5 h-5 text-purple-600" />
           </button>
           <button
             onClick={handleToggleWishlist}
             className="p-2 bg-white rounded-lg shadow-lg hover:bg-pink-50 transition-colors"
-            title={t('wishlist')}
+            title="Wishlist"
           >
             <Heart className={`w-5 h-5 ${isInWishlist ? 'fill-pink-500 text-pink-500' : 'text-pink-500'}`} />
           </button>
@@ -389,9 +466,9 @@ function ProductCard({
         </div>
 
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-purple-600">{formatCurrency(convertedPrice, currency)}</span>
-          {originalPrice && (
-            <span className="text-sm text-gray-400 line-through">{formatCurrency(originalPrice, currency)}</span>
+          <span className="text-purple-600">${product.price}</span>
+          {product.originalPrice && (
+            <span className="text-sm text-gray-400 line-through">${product.originalPrice}</span>
           )}
         </div>
 
@@ -400,7 +477,7 @@ function ProductCard({
           className="w-full py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg hover:shadow-lg transition-shadow flex items-center justify-center gap-2"
         >
           <ShoppingCart className="w-4 h-4" />
-          {t('add_to_cart')}
+          Add to Cart
         </button>
       </div>
     </div>
