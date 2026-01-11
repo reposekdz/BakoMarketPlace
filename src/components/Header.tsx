@@ -1,5 +1,9 @@
 import { Search, ShoppingCart, Heart, User, Bell, Globe, TrendingUp, Sparkles, DollarSign, Award, Store, TrendingDown, Calendar, LogOut, Settings, Package } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useCurrency } from '../contexts/CurrencyContext';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { CurrencySwitcher } from './CurrencySwitcher';
 
 interface HeaderProps {
   searchQuery: string;
@@ -16,6 +20,7 @@ interface HeaderProps {
   currentView?: string;
   onLogout?: () => void;
   onLoginClick?: () => void;
+  onNotificationClick?: () => void;
 }
 
 export function Header({ 
@@ -32,9 +37,11 @@ export function Header({
   onNavigate,
   currentView,
   onLogout,
-  onLoginClick
+  onLoginClick,
+  onNotificationClick
 }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
@@ -47,26 +54,14 @@ export function Header({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <select 
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="bg-white/20 px-3 py-1 rounded text-white border-none outline-none cursor-pointer"
-            >
-              <option value="USD">USD $</option>
-              <option value="EUR">EUR €</option>
-              <option value="GBP">GBP £</option>
-              <option value="JPY">JPY ¥</option>
-            </select>
-            <button className="flex items-center gap-1 hover:opacity-80">
-              <Globe className="w-4 h-4" />
-              <span>EN</span>
-            </button>
+            <CurrencySwitcher />
+            <LanguageSwitcher />
             <button 
               onClick={() => onNavigate?.('expo')}
               className="flex items-center gap-1 hover:opacity-80"
             >
               <Calendar className="w-4 h-4" />
-              <span>Online Expo</span>
+              <span>{t('header.online_expo') || 'Online Expo'}</span>
             </button>
             {user?.isSeller && (
               <button 
@@ -74,7 +69,7 @@ export function Header({
                 className="flex items-center gap-1 hover:opacity-80"
               >
                 <Store className="w-4 h-4" />
-                <span>My Shop</span>
+                <span>{t('header.my_shop') || 'My Shop'}</span>
               </button>
             )}
             <button 
@@ -82,11 +77,11 @@ export function Header({
               className="flex items-center gap-1 hover:opacity-80"
             >
               <TrendingUp className="w-4 h-4" />
-              <span>Become Sponsor</span>
+              <span>{t('header.become_sponsor') || 'Become Sponsor'}</span>
             </button>
             <div className="flex items-center gap-1 px-3 py-1 bg-white/20 rounded">
               <Award className="w-4 h-4" />
-              <span>{rewardPoints} pts</span>
+              <span>{rewardPoints} {t('header.points') || 'pts'}</span>
             </div>
           </div>
         </div>
@@ -105,7 +100,7 @@ export function Header({
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search for products, brands, categories..."
+              placeholder={t('header.search_placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none transition-colors"
@@ -131,7 +126,10 @@ export function Header({
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button 
+              onClick={onNotificationClick}
+              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
               <Bell className="w-6 h-6 text-gray-700" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
@@ -174,18 +172,18 @@ export function Header({
                   <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 p-2 w-48 z-50">
                     <button className="w-full px-4 py-2 text-left hover:bg-gray-100 rounded-lg flex items-center gap-2">
                       <Settings className="w-4 h-4" />
-                      <span>Settings</span>
+                      <span>{t('header.settings')}</span>
                     </button>
                     <button className="w-full px-4 py-2 text-left hover:bg-gray-100 rounded-lg flex items-center gap-2">
                       <Package className="w-4 h-4" />
-                      <span>Orders</span>
+                      <span>{t('header.orders')}</span>
                     </button>
                     <button 
                       onClick={onLogout}
                       className="w-full px-4 py-2 text-left hover:bg-gray-100 rounded-lg flex items-center gap-2 text-red-600"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>Sign Out</span>
+                      <span>{t('common.logout')}</span>
                     </button>
                   </div>
                 )}
@@ -196,7 +194,7 @@ export function Header({
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg hover:shadow-lg transition-shadow"
               >
                 <User className="w-5 h-5" />
-                <span>Sign In</span>
+                <span>{t('common.login')}</span>
               </button>
             )}
           </div>

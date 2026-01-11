@@ -13,9 +13,12 @@ import { RecentlyViewed } from './components/RecentlyViewed';
 import { FlashDeals } from './components/FlashDeals';
 import { RewardsProgram } from './components/RewardsProgram';
 import { SellerDashboard } from './components/SellerDashboard';
+import { UltraAdvancedSellerDashboard } from './components/UltraAdvancedSellerDashboard';
 import { OnlineExpo } from './components/OnlineExpo';
 import { EnhancedExpo } from './components/EnhancedExpo';
+import { UltraFunctionalExpo } from './components/UltraFunctionalExpo';
 import { SponsorshipPage } from './components/SponsorshipPage';
+import { NotificationCenter } from './components/NotificationCenter';
 import { Toaster } from 'sonner@2.0.3';
 import { Dialog, DialogContent } from './components/ui/dialog';
 
@@ -91,7 +94,7 @@ export interface Question {
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [currentView, setCurrentView] = useState<'home' | 'product' | 'seller-dashboard' | 'expo' | 'sponsorship'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'product' | 'seller-dashboard' | 'expo' | 'sponsorship' | 'notifications'>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -112,6 +115,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currency, setCurrency] = useState('USD');
   const [rewardPoints, setRewardPoints] = useState(1250);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const viewProduct = (product: Product) => {
     setSelectedProductId(product.id);
@@ -198,6 +202,7 @@ export default function App() {
         currentView={currentView}
         onLogout={handleLogout}
         onLoginClick={() => setShowAuthModal(true)}
+        onNotificationClick={() => setShowNotifications(true)}
       />
       
       {showAuthModal && (
@@ -277,14 +282,14 @@ export default function App() {
       )}
 
       {currentView === 'seller-dashboard' && (
-        <SellerDashboard 
+        <UltraAdvancedSellerDashboard 
           user={user}
           onNavigate={setCurrentView}
         />
       )}
 
       {currentView === 'expo' && (
-        <EnhancedExpo 
+        <UltraFunctionalExpo 
           onViewProduct={viewProduct}
           user={user}
         />
@@ -337,6 +342,12 @@ export default function App() {
         wishlist={wishlist}
         onRemove={(product) => toggleWishlist(product)}
         onAddToCart={addToCart}
+      />
+
+      <NotificationCenter 
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        user={user}
       />
 
       <Toaster position="bottom-right" />

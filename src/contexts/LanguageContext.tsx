@@ -57,6 +57,10 @@ const translations = {
     'header.help': 'Help & Support',
     'header.language': 'Language',
     'header.currency': 'Currency',
+    'header.online_expo': 'Online Expo',
+    'header.my_shop': 'My Shop',
+    'header.become_sponsor': 'Become Sponsor',
+    'header.points': 'pts',
     
     // Auth
     'auth.welcome': 'Welcome to Bako',
@@ -197,6 +201,10 @@ const translations = {
     'header.help': 'Aide et support',
     'header.language': 'Langue',
     'header.currency': 'Devise',
+    'header.online_expo': 'Expo en ligne',
+    'header.my_shop': 'Ma boutique',
+    'header.become_sponsor': 'Devenir sponsor',
+    'header.points': 'pts',
     
     // Auth
     'auth.welcome': 'Bienvenue sur Bako',
@@ -337,6 +345,10 @@ const translations = {
     'header.help': 'Ubufasha',
     'header.language': 'Ururimi',
     'header.currency': 'Ifaranga',
+    'header.online_expo': 'Expo en ligne',
+    'header.my_shop': 'Aduka yanjye',
+    'header.become_sponsor': 'Ba umusponsor',
+    'header.points': 'pts',
     
     // Auth
     'auth.welcome': 'Murakaza neza kuri Bako',
@@ -477,6 +489,10 @@ const translations = {
     'header.help': 'Msaada',
     'header.language': 'Lugha',
     'header.currency': 'Sarafu',
+    'header.online_expo': 'Expo en line',
+    'header.my_shop': 'Duka yangu',
+    'header.become_sponsor': 'Kuwa mshirika',
+    'header.points': 'pts',
     
     // Auth
     'auth.welcome': 'Karibu Bako',
